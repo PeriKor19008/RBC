@@ -14,7 +14,7 @@ class SimpleModel(nn.Module):
             self.layers.append(nn.Linear(layers[i], layers[i + 1]))  # Input to output size
 
         # Output layer (assuming 3 outputs)
-        self.output_layer = nn.Linear(layers[-1], 3)  # Final output layer to predict 3 values
+        self.output_layer = nn.Linear(layers[-1], 4)  # Final output layer to predict 3 values
 
     def forward(self, x):
         # Flatten the input image to a 1D vector (for fully connected layers)
@@ -27,4 +27,9 @@ class SimpleModel(nn.Module):
         # Final output layer
         x = self.output_layer(x)
         return x
+
+
+
+
+
 

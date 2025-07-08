@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib
-import numpy as np
 import matplotlib.pyplot as plt
 from fontTools.unicodedata import block
 
@@ -33,7 +31,7 @@ def display_image(image_data, use_log=False):
 
 def plot_image_as_line(image_data, use_log=False):
     if not image_data:
-        print("❌ No image data found.")
+        print(" No image data found.")
         return
 
     image_text = image_data['log_image'] if use_log else image_data['regular_image']

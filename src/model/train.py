@@ -59,7 +59,6 @@ def log_run_details(num_epochs, learning_rate, batch_size, layers, final_loss, d
         f.write(f"Using device: {device}\n")
         for i in range(num_epochs):
             f.write(f"Epoch {i + 1} complete. Loss: {epoch_losses[i]:.4f}\n")
-
         f.write(f"Finished Training and saved the model.\n")
         f.write(f"---------------------------------------------------------\n")
 
@@ -102,6 +101,12 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, batch_size
 
     final_loss = epoch_losses[-1]  # Final loss after the last epoch
     print(f"Finished Training. Final Loss: {final_loss:.4f}")
+
+    # Save trained model weights
+    os.makedirs("models", exist_ok=True)
+    model_save_path = f"models/model_run{get_next_run_number() - 1}.pt"
+    torch.save(model.state_dict(), model_save_path)
+    print(f"Model saved to {model_save_path}")
 
     # Log run details after training
     log_run_details(num_epochs, learning_rate, batch_size, layers, final_loss, device, epoch_losses)

@@ -1,0 +1,695 @@
+
+run #1:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 30
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 2924302.7448
+Epoch 2 complete. Loss: 1233517.5104
+Epoch 3 complete. Loss: 981852.5796
+Epoch 4 complete. Loss: 841247.1277
+Epoch 5 complete. Loss: 737810.0988
+Epoch 6 complete. Loss: 657880.6348
+Epoch 7 complete. Loss: 597796.5772
+Epoch 8 complete. Loss: 552579.8486
+Epoch 9 complete. Loss: 517786.1809
+Epoch 10 complete. Loss: 485517.1854
+Epoch 11 complete. Loss: 455783.0409
+Epoch 12 complete. Loss: 427708.9261
+Epoch 13 complete. Loss: 398573.9022
+Epoch 14 complete. Loss: 369872.1372
+Epoch 15 complete. Loss: 378474.9647
+Epoch 16 complete. Loss: 358870.9558
+Epoch 17 complete. Loss: 333991.9893
+Epoch 18 complete. Loss: 310015.0413
+Epoch 19 complete. Loss: 296591.6155
+Epoch 20 complete. Loss: 292005.8497
+Epoch 21 complete. Loss: 276529.8681
+Epoch 22 complete. Loss: 268764.9565
+Epoch 23 complete. Loss: 301832.8316
+Epoch 24 complete. Loss: 278085.6734
+Epoch 25 complete. Loss: 261946.0760
+Epoch 26 complete. Loss: 282149.4275
+Epoch 27 complete. Loss: 267935.5770
+Epoch 28 complete. Loss: 244038.2580
+Epoch 29 complete. Loss: 234101.5915
+Epoch 30 complete. Loss: 267335.2403
+Finished Training and saved the model.
+---------------------------------------------------------
+
+
+run #2:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 30
+Learning Rate: 0.0005
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 3808187.3209
+Epoch 2 complete. Loss: 1966655.3649
+Epoch 3 complete. Loss: 1696530.6732
+Epoch 4 complete. Loss: 1419226.7496
+Epoch 5 complete. Loss: 1194589.7927
+Epoch 6 complete. Loss: 1035129.5602
+Epoch 7 complete. Loss: 916866.1039
+Epoch 8 complete. Loss: 831779.7843
+Epoch 9 complete. Loss: 757763.6854
+Epoch 10 complete. Loss: 694243.1375
+Epoch 11 complete. Loss: 643400.4066
+Epoch 12 complete. Loss: 605983.3322
+Epoch 13 complete. Loss: 573356.8410
+Epoch 14 complete. Loss: 509248.4681
+Epoch 15 complete. Loss: 428832.8444
+Epoch 16 complete. Loss: 394757.1901
+Epoch 17 complete. Loss: 366249.4816
+Epoch 18 complete. Loss: 346099.0227
+Epoch 19 complete. Loss: 318875.2729
+Epoch 20 complete. Loss: 299790.5700
+Epoch 21 complete. Loss: 292175.8651
+Epoch 22 complete. Loss: 266292.7243
+Epoch 23 complete. Loss: 258425.1290
+Epoch 24 complete. Loss: 232090.6931
+Epoch 25 complete. Loss: 225424.7050
+Epoch 26 complete. Loss: 209950.8363
+Epoch 27 complete. Loss: 197474.9671
+Epoch 28 complete. Loss: 183962.2666
+Epoch 29 complete. Loss: 182877.8147
+Epoch 30 complete. Loss: 166794.6739
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #3:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 40
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 2216750.7352
+Epoch 2 complete. Loss: 1144596.8988
+Epoch 3 complete. Loss: 805107.4326
+Epoch 4 complete. Loss: 638986.7493
+Epoch 5 complete. Loss: 529681.6981
+Epoch 6 complete. Loss: 461633.5786
+Epoch 7 complete. Loss: 414688.9853
+Epoch 8 complete. Loss: 365197.1447
+Epoch 9 complete. Loss: 355221.5987
+Epoch 10 complete. Loss: 312017.3795
+Epoch 11 complete. Loss: 271066.2596
+Epoch 12 complete. Loss: 248800.1258
+Epoch 13 complete. Loss: 238495.9169
+Epoch 14 complete. Loss: 236273.6221
+Epoch 15 complete. Loss: 284598.7214
+Epoch 16 complete. Loss: 258490.6698
+Epoch 17 complete. Loss: 238661.0576
+Epoch 18 complete. Loss: 196480.2067
+Epoch 19 complete. Loss: 187889.8390
+Epoch 20 complete. Loss: 157474.3318
+Epoch 21 complete. Loss: 179226.4893
+Epoch 22 complete. Loss: 153578.8649
+Epoch 23 complete. Loss: 156779.1120
+Epoch 24 complete. Loss: 142257.2663
+Epoch 25 complete. Loss: 189387.2840
+Epoch 26 complete. Loss: 132402.3127
+Epoch 27 complete. Loss: 117540.5747
+Epoch 28 complete. Loss: 126649.7513
+Epoch 29 complete. Loss: 96916.8182
+Epoch 30 complete. Loss: 126079.8890
+Epoch 31 complete. Loss: 90775.0643
+Epoch 32 complete. Loss: 165482.5442
+Epoch 33 complete. Loss: 129668.4901
+Epoch 34 complete. Loss: 121905.0344
+Epoch 35 complete. Loss: 130196.3053
+Epoch 36 complete. Loss: 106989.9736
+Epoch 37 complete. Loss: 105520.2723
+Epoch 38 complete. Loss: 117736.9621
+Epoch 39 complete. Loss: 103935.1202
+Epoch 40 complete. Loss: 99261.1482
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #4:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 50
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 2912993.8184
+Epoch 2 complete. Loss: 1262717.5127
+Epoch 3 complete. Loss: 981639.3076
+Epoch 4 complete. Loss: 823420.4771
+Epoch 5 complete. Loss: 713590.4674
+Epoch 6 complete. Loss: 634311.7183
+Epoch 7 complete. Loss: 577781.8719
+Epoch 8 complete. Loss: 533730.2924
+Epoch 9 complete. Loss: 493771.0046
+Epoch 10 complete. Loss: 468998.2967
+Epoch 11 complete. Loss: 425460.8842
+Epoch 12 complete. Loss: 420429.3544
+Epoch 13 complete. Loss: 329038.8271
+Epoch 14 complete. Loss: 253174.6879
+Epoch 15 complete. Loss: 215921.9894
+Epoch 16 complete. Loss: 197513.5424
+Epoch 17 complete. Loss: 188926.0066
+Epoch 18 complete. Loss: 164269.1006
+Epoch 19 complete. Loss: 163015.4809
+Epoch 20 complete. Loss: 156280.1165
+Epoch 21 complete. Loss: 124914.2445
+Epoch 22 complete. Loss: 148266.6309
+Epoch 23 complete. Loss: 135735.9246
+Epoch 24 complete. Loss: 124315.0982
+Epoch 25 complete. Loss: 114727.5099
+Epoch 26 complete. Loss: 94604.3562
+Epoch 27 complete. Loss: 113195.8033
+Epoch 28 complete. Loss: 142273.7714
+Epoch 29 complete. Loss: 161982.0306
+Epoch 30 complete. Loss: 109503.4141
+Epoch 31 complete. Loss: 94128.3178
+Epoch 32 complete. Loss: 78759.1571
+Epoch 33 complete. Loss: 215592.4023
+Epoch 34 complete. Loss: 118013.4917
+Epoch 35 complete. Loss: 118100.5770
+Epoch 36 complete. Loss: 101971.5209
+Epoch 37 complete. Loss: 116662.3612
+Epoch 38 complete. Loss: 79159.7436
+Epoch 39 complete. Loss: 136919.6645
+Epoch 40 complete. Loss: 67400.7335
+Epoch 41 complete. Loss: 101610.1217
+Epoch 42 complete. Loss: 85422.0117
+Epoch 43 complete. Loss: 93128.4239
+Epoch 44 complete. Loss: 121958.9548
+Epoch 45 complete. Loss: 77459.3378
+Epoch 46 complete. Loss: 96516.7900
+Epoch 47 complete. Loss: 112999.9852
+Epoch 48 complete. Loss: 117614.2016
+Epoch 49 complete. Loss: 74339.1935
+Epoch 50 complete. Loss: 94213.7292
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #5:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 30
+Learning Rate: 0.001
+Batch Size: 60
+Using device: cpu
+Epoch 1 complete. Loss: 3783229.1702
+Epoch 2 complete. Loss: 1571674.2887
+Epoch 3 complete. Loss: 1228778.1504
+Epoch 4 complete. Loss: 1012473.9807
+Epoch 5 complete. Loss: 866852.8293
+Epoch 6 complete. Loss: 762948.6303
+Epoch 7 complete. Loss: 683716.0054
+Epoch 8 complete. Loss: 616085.4681
+Epoch 9 complete. Loss: 555740.1542
+Epoch 10 complete. Loss: 505101.6251
+Epoch 11 complete. Loss: 472718.5018
+Epoch 12 complete. Loss: 450595.3462
+Epoch 13 complete. Loss: 418271.6184
+Epoch 14 complete. Loss: 390979.2005
+Epoch 15 complete. Loss: 356986.4017
+Epoch 16 complete. Loss: 338920.1017
+Epoch 17 complete. Loss: 308805.1915
+Epoch 18 complete. Loss: 290652.5408
+Epoch 19 complete. Loss: 277606.1137
+Epoch 20 complete. Loss: 252213.4172
+Epoch 21 complete. Loss: 245086.3010
+Epoch 22 complete. Loss: 218480.8130
+Epoch 23 complete. Loss: 212725.6830
+Epoch 24 complete. Loss: 200190.8351
+Epoch 25 complete. Loss: 182548.5090
+Epoch 26 complete. Loss: 173041.4643
+Epoch 27 complete. Loss: 162325.5929
+Epoch 28 complete. Loss: 164212.5561
+Epoch 29 complete. Loss: 158804.3249
+Epoch 30 complete. Loss: 140230.6441
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #6:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 30
+Learning Rate: 0.001
+Batch Size: 90
+Using device: cpu
+Epoch 1 complete. Loss: 6114395.0236
+Epoch 2 complete. Loss: 1739788.6159
+Epoch 3 complete. Loss: 1355861.4704
+Epoch 4 complete. Loss: 1162778.3460
+Epoch 5 complete. Loss: 1041596.4021
+Epoch 6 complete. Loss: 951496.2399
+Epoch 7 complete. Loss: 883137.1342
+Epoch 8 complete. Loss: 825167.2176
+Epoch 9 complete. Loss: 772996.1821
+Epoch 10 complete. Loss: 722841.2215
+Epoch 11 complete. Loss: 682466.9079
+Epoch 12 complete. Loss: 642570.7883
+Epoch 13 complete. Loss: 613534.2983
+Epoch 14 complete. Loss: 584904.9271
+Epoch 15 complete. Loss: 562273.0031
+Epoch 16 complete. Loss: 538943.6274
+Epoch 17 complete. Loss: 516220.1819
+Epoch 18 complete. Loss: 494996.1662
+Epoch 19 complete. Loss: 471858.2146
+Epoch 20 complete. Loss: 453876.4526
+Epoch 21 complete. Loss: 434023.8275
+Epoch 22 complete. Loss: 411219.1206
+Epoch 23 complete. Loss: 393211.4447
+Epoch 24 complete. Loss: 381223.8299
+Epoch 25 complete. Loss: 364516.0300
+Epoch 26 complete. Loss: 340972.6532
+Epoch 27 complete. Loss: 328944.6023
+Epoch 28 complete. Loss: 317270.2984
+Epoch 29 complete. Loss: 296783.1973
+Epoch 30 complete. Loss: 286697.4542
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #7:
+Hidden Layers: 2500 --> 250 --> 128
+Number of Epochs: 30
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 2458182.2086
+Epoch 2 complete. Loss: 779358.7020
+Epoch 3 complete. Loss: 575154.9650
+Epoch 4 complete. Loss: 438569.2367
+Epoch 5 complete. Loss: 443758.9987
+Epoch 6 complete. Loss: 363457.5802
+Epoch 7 complete. Loss: 444101.0967
+Epoch 8 complete. Loss: 335961.6313
+Epoch 9 complete. Loss: 304016.3800
+Epoch 10 complete. Loss: 319644.9223
+Epoch 11 complete. Loss: 206755.0556
+Epoch 12 complete. Loss: 173687.0799
+Epoch 13 complete. Loss: 236695.8878
+Epoch 14 complete. Loss: 134255.2646
+Epoch 15 complete. Loss: 95516.0997
+Epoch 16 complete. Loss: 416822.0970
+Epoch 17 complete. Loss: 176009.5480
+Epoch 18 complete. Loss: 137268.4388
+Epoch 19 complete. Loss: 149413.8236
+Epoch 20 complete. Loss: 63620.3842
+Epoch 21 complete. Loss: 137546.3064
+Epoch 22 complete. Loss: 107304.8527
+Epoch 23 complete. Loss: 79054.6604
+Epoch 24 complete. Loss: 124448.2997
+Epoch 25 complete. Loss: 81103.3755
+Epoch 26 complete. Loss: 113506.1900
+Epoch 27 complete. Loss: 43198.7155
+Epoch 28 complete. Loss: 65955.4692
+Epoch 29 complete. Loss: 106503.2678
+Epoch 30 complete. Loss: 41635.0444
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #8:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 30
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 2624447.9526
+Epoch 2 complete. Loss: 343611.5356
+Epoch 3 complete. Loss: 230290.9447
+Epoch 4 complete. Loss: 190885.6456
+Epoch 5 complete. Loss: 156430.2569
+Epoch 6 complete. Loss: 121746.0330
+Epoch 7 complete. Loss: 102713.8438
+Epoch 8 complete. Loss: 87730.6907
+Epoch 9 complete. Loss: 71452.4354
+Epoch 10 complete. Loss: 58331.9655
+Epoch 11 complete. Loss: 50065.5514
+Epoch 12 complete. Loss: 44415.8578
+Epoch 13 complete. Loss: 40196.7823
+Epoch 14 complete. Loss: 37182.5785
+Epoch 15 complete. Loss: 34352.0550
+Epoch 16 complete. Loss: 32142.5494
+Epoch 17 complete. Loss: 30172.7783
+Epoch 18 complete. Loss: 28447.2882
+Epoch 19 complete. Loss: 27003.2965
+Epoch 20 complete. Loss: 25742.7162
+Epoch 21 complete. Loss: 24529.3192
+Epoch 22 complete. Loss: 23772.6419
+Epoch 23 complete. Loss: 22814.0434
+Epoch 24 complete. Loss: 21578.5641
+Epoch 25 complete. Loss: 20999.7417
+Epoch 26 complete. Loss: 20163.7015
+Epoch 27 complete. Loss: 19564.2220
+Epoch 28 complete. Loss: 18900.9739
+Epoch 29 complete. Loss: 18453.0412
+Epoch 30 complete. Loss: 17854.2278
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #9:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 30
+Learning Rate: 0.005
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 602467.9257
+Epoch 2 complete. Loss: 78160.2051
+Epoch 3 complete. Loss: 45749.8547
+Epoch 4 complete. Loss: 33787.1236
+Epoch 5 complete. Loss: 26246.0602
+Epoch 6 complete. Loss: 21440.8224
+Epoch 7 complete. Loss: 17968.6023
+Epoch 8 complete. Loss: 16005.5705
+Epoch 9 complete. Loss: 13479.5194
+Epoch 10 complete. Loss: 12540.1724
+Epoch 11 complete. Loss: 11244.0686
+Epoch 12 complete. Loss: 10472.5384
+Epoch 13 complete. Loss: 9869.5293
+Epoch 14 complete. Loss: 8854.6126
+Epoch 15 complete. Loss: 8654.4108
+Epoch 16 complete. Loss: 8089.2055
+Epoch 17 complete. Loss: 7436.6411
+Epoch 18 complete. Loss: 7649.7070
+Epoch 19 complete. Loss: 6756.3849
+Epoch 20 complete. Loss: 6730.9860
+Epoch 21 complete. Loss: 6293.8302
+Epoch 22 complete. Loss: 6199.9851
+Epoch 23 complete. Loss: 5852.6802
+Epoch 24 complete. Loss: 6053.8299
+Epoch 25 complete. Loss: 5735.6883
+Epoch 26 complete. Loss: 5612.0493
+Epoch 27 complete. Loss: 5067.0376
+Epoch 28 complete. Loss: 4876.1858
+Epoch 29 complete. Loss: 4623.0821
+Epoch 30 complete. Loss: 5019.3879
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #10:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 40
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 3044305.5339
+Epoch 2 complete. Loss: 427452.1317
+Epoch 3 complete. Loss: 272666.6852
+Epoch 4 complete. Loss: 214631.9777
+Epoch 5 complete. Loss: 192427.1252
+Epoch 6 complete. Loss: 149217.8315
+Epoch 7 complete. Loss: 89112.0274
+Epoch 8 complete. Loss: 68693.9577
+Epoch 9 complete. Loss: 57111.1720
+Epoch 10 complete. Loss: 50618.4291
+Epoch 11 complete. Loss: 46127.7743
+Epoch 12 complete. Loss: 42320.1570
+Epoch 13 complete. Loss: 39113.3054
+Epoch 14 complete. Loss: 35476.4131
+Epoch 15 complete. Loss: 31501.8020
+Epoch 16 complete. Loss: 28518.1817
+Epoch 17 complete. Loss: 25697.1683
+Epoch 18 complete. Loss: 23579.9671
+Epoch 19 complete. Loss: 21582.7322
+Epoch 20 complete. Loss: 19879.6314
+Epoch 21 complete. Loss: 18666.3917
+Epoch 22 complete. Loss: 17280.5761
+Epoch 23 complete. Loss: 16430.5934
+Epoch 24 complete. Loss: 15530.0197
+Epoch 25 complete. Loss: 14723.5183
+Epoch 26 complete. Loss: 14056.6453
+Epoch 27 complete. Loss: 13385.9556
+Epoch 28 complete. Loss: 12741.7821
+Epoch 29 complete. Loss: 12197.8079
+Epoch 30 complete. Loss: 11849.7380
+Epoch 31 complete. Loss: 11373.4823
+Epoch 32 complete. Loss: 11069.1549
+Epoch 33 complete. Loss: 10591.0793
+Epoch 34 complete. Loss: 10279.7190
+Epoch 35 complete. Loss: 10069.7528
+Epoch 36 complete. Loss: 9781.9250
+Epoch 37 complete. Loss: 9445.8903
+Epoch 38 complete. Loss: 9263.1715
+Epoch 39 complete. Loss: 9005.2353
+Epoch 40 complete. Loss: 8762.6437
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #11:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 50
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 16295156.0508
+Epoch 2 complete. Loss: 16290233.3624
+Epoch 3 complete. Loss: 16284599.4081
+Epoch 4 complete. Loss: 16278792.6640
+Epoch 5 complete. Loss: 16277527.2711
+Epoch 6 complete. Loss: 16272509.7046
+Epoch 7 complete. Loss: 16266700.1147
+Epoch 8 complete. Loss: 16258725.5168
+Epoch 9 complete. Loss: 16255041.7888
+Epoch 10 complete. Loss: 16251583.5076
+Epoch 11 complete. Loss: 16244262.1036
+Epoch 12 complete. Loss: 16242922.1513
+Epoch 13 complete. Loss: 16234183.2335
+Epoch 14 complete. Loss: 16228595.5168
+Epoch 15 complete. Loss: 16222715.1533
+Epoch 16 complete. Loss: 16217481.8345
+Epoch 17 complete. Loss: 16212726.0020
+Epoch 18 complete. Loss: 16210566.9269
+Epoch 19 complete. Loss: 16203200.0142
+Epoch 20 complete. Loss: 16199329.9563
+Epoch 21 complete. Loss: 16194220.8934
+Epoch 22 complete. Loss: 16187819.9086
+Epoch 23 complete. Loss: 16182258.6690
+Epoch 24 complete. Loss: 16181225.1909
+Epoch 25 complete. Loss: 16174355.7066
+Epoch 26 complete. Loss: 16166839.5594
+Epoch 27 complete. Loss: 16162770.0883
+Epoch 28 complete. Loss: 16157378.4812
+Epoch 29 complete. Loss: 16155061.8711
+Epoch 30 complete. Loss: 16150182.6802
+Epoch 31 complete. Loss: 16142795.9289
+Epoch 32 complete. Loss: 16137044.5543
+Epoch 33 complete. Loss: 16132094.1868
+Epoch 34 complete. Loss: 16130246.5157
+Epoch 35 complete. Loss: 16124374.9036
+Epoch 36 complete. Loss: 16118158.5381
+Epoch 37 complete. Loss: 16112568.2335
+Epoch 38 complete. Loss: 16107361.9117
+Epoch 39 complete. Loss: 16104600.7756
+Epoch 40 complete. Loss: 16098454.4640
+Epoch 41 complete. Loss: 16093283.9858
+Epoch 42 complete. Loss: 16087251.5168
+Epoch 43 complete. Loss: 16081937.7848
+Epoch 44 complete. Loss: 16078011.3990
+Epoch 45 complete. Loss: 16075059.4822
+Epoch 46 complete. Loss: 16069153.5360
+Epoch 47 complete. Loss: 16063026.3482
+Epoch 48 complete. Loss: 16058143.3492
+Epoch 49 complete. Loss: 16052352.3239
+Epoch 50 complete. Loss: 16048394.0569
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #12:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 30
+Learning Rate: 0.001
+Batch Size: 60
+Using device: cpu
+Epoch 1 complete. Loss: 4379471.9476
+Epoch 2 complete. Loss: 546362.3235
+Epoch 3 complete. Loss: 410678.5152
+Epoch 4 complete. Loss: 304973.5849
+Epoch 5 complete. Loss: 241765.8377
+Epoch 6 complete. Loss: 202035.7014
+Epoch 7 complete. Loss: 160413.9514
+Epoch 8 complete. Loss: 118549.7689
+Epoch 9 complete. Loss: 95395.7947
+Epoch 10 complete. Loss: 81134.7748
+Epoch 11 complete. Loss: 69567.5703
+Epoch 12 complete. Loss: 60685.2204
+Epoch 13 complete. Loss: 54384.8648
+Epoch 14 complete. Loss: 49673.5595
+Epoch 15 complete. Loss: 46041.8687
+Epoch 16 complete. Loss: 42888.3010
+Epoch 17 complete. Loss: 40163.5400
+Epoch 18 complete. Loss: 37831.0662
+Epoch 19 complete. Loss: 35661.8075
+Epoch 20 complete. Loss: 33776.0627
+Epoch 21 complete. Loss: 32150.2453
+Epoch 22 complete. Loss: 30420.8554
+Epoch 23 complete. Loss: 28885.0914
+Epoch 24 complete. Loss: 27557.0575
+Epoch 25 complete. Loss: 26491.6213
+Epoch 26 complete. Loss: 25268.3637
+Epoch 27 complete. Loss: 24350.7679
+Epoch 28 complete. Loss: 23538.9562
+Epoch 29 complete. Loss: 22782.8040
+Epoch 30 complete. Loss: 21963.1172
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #13:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 30
+Learning Rate: 0.001
+Batch Size: 30
+Using device: cpu
+Epoch 1 complete. Loss: 2729039.4257
+Epoch 2 complete. Loss: 403127.7528
+Epoch 3 complete. Loss: 259443.1705
+Epoch 4 complete. Loss: 208068.3298
+Epoch 5 complete. Loss: 189768.5434
+Epoch 6 complete. Loss: 180623.4935
+Epoch 7 complete. Loss: 174780.8261
+Epoch 8 complete. Loss: 170178.4656
+Epoch 9 complete. Loss: 166370.2767
+Epoch 10 complete. Loss: 163273.6163
+Epoch 11 complete. Loss: 159589.9214
+Epoch 12 complete. Loss: 156214.4271
+Epoch 13 complete. Loss: 107745.9890
+Epoch 14 complete. Loss: 48956.5659
+Epoch 15 complete. Loss: 38682.9081
+Epoch 16 complete. Loss: 34226.3078
+Epoch 17 complete. Loss: 31661.1623
+Epoch 18 complete. Loss: 29595.9517
+Epoch 19 complete. Loss: 28131.9018
+Epoch 20 complete. Loss: 26418.0298
+Epoch 21 complete. Loss: 25208.3440
+Epoch 22 complete. Loss: 24112.1232
+Epoch 23 complete. Loss: 23181.1607
+Epoch 24 complete. Loss: 22289.3828
+Epoch 25 complete. Loss: 21302.5704
+Epoch 26 complete. Loss: 20537.3511
+Epoch 27 complete. Loss: 19773.4598
+Epoch 28 complete. Loss: 19171.7327
+Epoch 29 complete. Loss: 18725.2596
+Epoch 30 complete. Loss: 18165.5701
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #14:
+Hidden Layers: 2500 --> 250 --> 128
+Number of Epochs: 30
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 2505125.1606
+Epoch 2 complete. Loss: 177503.6388
+Epoch 3 complete. Loss: 162592.4549
+Epoch 4 complete. Loss: 154314.7561
+Epoch 5 complete. Loss: 148331.2634
+Epoch 6 complete. Loss: 144441.1322
+Epoch 7 complete. Loss: 141684.0249
+Epoch 8 complete. Loss: 140133.1607
+Epoch 9 complete. Loss: 138429.7093
+Epoch 10 complete. Loss: 137386.3798
+Epoch 11 complete. Loss: 136255.7000
+Epoch 12 complete. Loss: 135404.9463
+Epoch 13 complete. Loss: 134630.2985
+Epoch 14 complete. Loss: 133933.2602
+Epoch 15 complete. Loss: 133464.0866
+Epoch 16 complete. Loss: 133052.6718
+Epoch 17 complete. Loss: 132484.3573
+Epoch 18 complete. Loss: 132460.0485
+Epoch 19 complete. Loss: 132237.8210
+Epoch 20 complete. Loss: 131884.2990
+Epoch 21 complete. Loss: 131872.3231
+Epoch 22 complete. Loss: 131654.3685
+Epoch 23 complete. Loss: 131461.2814
+Epoch 24 complete. Loss: 131375.7612
+Epoch 25 complete. Loss: 131386.2867
+Epoch 26 complete. Loss: 131314.5250
+Epoch 27 complete. Loss: 130983.8045
+Epoch 28 complete. Loss: 130855.5046
+Epoch 29 complete. Loss: 130834.6983
+Epoch 30 complete. Loss: 130952.1461
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #15:
+Hidden Layers: 2500 --> 500 --> 128
+Number of Epochs: 40
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 16298407.3716
+Epoch 2 complete. Loss: 16290616.6213
+Epoch 3 complete. Loss: 16287422.3553
+Epoch 4 complete. Loss: 16282543.0822
+Epoch 5 complete. Loss: 16276927.5756
+Epoch 6 complete. Loss: 16269518.0853
+Epoch 7 complete. Loss: 16270620.0558
+Epoch 8 complete. Loss: 16262788.9990
+Epoch 9 complete. Loss: 16255967.9066
+Epoch 10 complete. Loss: 16250349.9553
+Epoch 11 complete. Loss: 16246437.2914
+Epoch 12 complete. Loss: 16242062.0924
+Epoch 13 complete. Loss: 16237329.1036
+Epoch 14 complete. Loss: 16230394.8315
+Epoch 15 complete. Loss: 16226024.0650
+Epoch 16 complete. Loss: 16222582.4386
+Epoch 17 complete. Loss: 16215687.1188
+Epoch 18 complete. Loss: 16208855.6244
+Epoch 19 complete. Loss: 16207040.1127
+Epoch 20 complete. Loss: 16198083.5015
+Epoch 21 complete. Loss: 16196914.0051
+Epoch 22 complete. Loss: 16189028.4944
+Epoch 23 complete. Loss: 16187134.1157
+Epoch 24 complete. Loss: 16178168.5645
+Epoch 25 complete. Loss: 16172990.5827
+Epoch 26 complete. Loss: 16169475.4193
+Epoch 27 complete. Loss: 16166601.2812
+Epoch 28 complete. Loss: 16160440.5594
+Epoch 29 complete. Loss: 16154368.1675
+Epoch 30 complete. Loss: 16149814.4305
+Epoch 31 complete. Loss: 16143706.0365
+Epoch 32 complete. Loss: 16140126.9269
+Epoch 33 complete. Loss: 16134103.2914
+Epoch 34 complete. Loss: 16130350.3371
+Epoch 35 complete. Loss: 16125013.6010
+Epoch 36 complete. Loss: 16119517.9046
+Epoch 37 complete. Loss: 16113503.8000
+Epoch 38 complete. Loss: 16107212.4335
+Epoch 39 complete. Loss: 16103005.0051
+Epoch 40 complete. Loss: 16097709.1411
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #16:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 30
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 2037930.3605
+Epoch 2 complete. Loss: 353403.4755
+Epoch 3 complete. Loss: 231026.6935
+Epoch 4 complete. Loss: 190611.7152
+Epoch 5 complete. Loss: 160458.9437
+Epoch 6 complete. Loss: 104477.3643
+Epoch 7 complete. Loss: 74731.0998
+Epoch 8 complete. Loss: 58538.2049
+Epoch 9 complete. Loss: 48393.7511
+Epoch 10 complete. Loss: 41986.2547
+Epoch 11 complete. Loss: 37573.4234
+Epoch 12 complete. Loss: 34103.7646
+Epoch 13 complete. Loss: 31189.7672
+Epoch 14 complete. Loss: 28685.9276
+Epoch 15 complete. Loss: 26831.6254
+Epoch 16 complete. Loss: 24951.4469
+Epoch 17 complete. Loss: 23720.5839
+Epoch 18 complete. Loss: 22304.1407
+Epoch 19 complete. Loss: 21146.8103
+Epoch 20 complete. Loss: 20058.1698
+Epoch 21 complete. Loss: 19182.4965
+Epoch 22 complete. Loss: 18404.2464
+Epoch 23 complete. Loss: 17681.6522
+Epoch 24 complete. Loss: 16875.1817
+Epoch 25 complete. Loss: 16307.9290
+Epoch 26 complete. Loss: 15966.6022
+Epoch 27 complete. Loss: 15346.2047
+Epoch 28 complete. Loss: 14956.7927
+Epoch 29 complete. Loss: 14668.1109
+Epoch 30 complete. Loss: 14289.4976
+Finished Training and saved the model.
+---------------------------------------------------------

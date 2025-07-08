@@ -1,5 +1,5 @@
 import mysql.connector
-from Data.DB_setup.db_config import DB_CONFIG  # You can also pass this via constructor
+from Data.DB_setup.db_config import DB_CONFIG
 
 class ImageDB:
     def __init__(self):
