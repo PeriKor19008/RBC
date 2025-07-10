@@ -5,7 +5,7 @@ from fontTools.unicodedata import block
 from Data.DB_setup.image_db_utils import ImageDB
 
 
-def display_image(image_data, use_log=False):
+def display_image(image_data, use_log=True):
     if not image_data:
         print(" No image data found.")
         return

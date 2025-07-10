@@ -30,3 +30,12 @@ class ImageDB:
         """
         self.cursor.execute(query, (diameter, thickness, ratio))
         return self.cursor.fetchone()
+
+    def search_image_by_all_dtr(self, diameter, thickness, ratio,ref_index):
+        query = """
+            SELECT * FROM ImageData 
+            WHERE diameter = %s AND thickness = %s AND ratio = %s AND ref_index = %s
+            LIMIT 1
+        """
+        self.cursor.execute(query, (diameter, thickness, ratio, ref_index))
+        return self.cursor.fetchone()

@@ -693,3 +693,63 @@ Epoch 29 complete. Loss: 14668.1109
 Epoch 30 complete. Loss: 14289.4976
 Finished Training and saved the model.
 ---------------------------------------------------------
+
+run #17:
+Hidden Layers: 2500 --> 128 --> 4
+Number of Epochs: 2
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 2238332.3014
+Epoch 2 complete. Loss: 367476.5590
+Finished Training and saved the model.
+---------------------------------------------------------
+
+run #18:
+Hidden Layers: 2500 --> 1000 --> 128
+Number of Epochs: 40
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 1234675.2359
+Epoch 2 complete. Loss: 173844.1859
+Epoch 3 complete. Loss: 161462.5662
+Epoch 4 complete. Loss: 153595.6802
+Epoch 5 complete. Loss: 148673.7468
+Epoch 6 complete. Loss: 144706.6070
+Epoch 7 complete. Loss: 142285.7613
+Epoch 8 complete. Loss: 140927.8558
+Epoch 9 complete. Loss: 139502.5760
+Epoch 10 complete. Loss: 137353.0007
+Epoch 11 complete. Loss: 137402.1134
+Epoch 12 complete. Loss: 136578.7215
+Epoch 13 complete. Loss: 136456.0737
+Epoch 14 complete. Loss: 135576.9370
+Epoch 15 complete. Loss: 135082.4943
+Epoch 16 complete. Loss: 134528.7552
+Epoch 17 complete. Loss: 134319.8319
+Epoch 18 complete. Loss: 133852.0446
+Epoch 19 complete. Loss: 133443.3383
+Epoch 20 complete. Loss: 133741.8097
+Epoch 21 complete. Loss: 132490.9215
+Epoch 22 complete. Loss: 132868.7453
+Epoch 23 complete. Loss: 132358.1118
+Epoch 24 complete. Loss: 132408.5536
+Epoch 25 complete. Loss: 132251.8801
+Epoch 26 complete. Loss: 132011.5448
+Epoch 27 complete. Loss: 131774.0231
+Epoch 28 complete. Loss: 131465.5372
+Epoch 29 complete. Loss: 131286.2668
+Epoch 30 complete. Loss: 131592.8957
+Epoch 31 complete. Loss: 131090.9976
+Epoch 32 complete. Loss: 130995.3188
+Epoch 33 complete. Loss: 131049.8382
+Epoch 34 complete. Loss: 130702.8553
+Epoch 35 complete. Loss: 130984.3782
+Epoch 36 complete. Loss: 130503.0862
+Epoch 37 complete. Loss: 130615.6259
+Epoch 38 complete. Loss: 130499.7040
+Epoch 39 complete. Loss: 130398.1274
+Epoch 40 complete. Loss: 130739.4939
+Finished Training and saved the model.
+---------------------------------------------------------

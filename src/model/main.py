@@ -40,7 +40,7 @@ def default_run(lr,bs,l,ne):
 if __name__ == "__main__":
     os.makedirs("comp_graphs", exist_ok=True)
 
-    default_run(0.001,32,[2500,128,4],30)
+    default_run(0.001,32,[2500,1000,128,4],40)
 
 
 
