@@ -10,7 +10,7 @@ layers = [2500,500,128,4]
 model = SimpleModel(layers)
 
 model_num = input("enter model number: ")
-state_dict = torch.load('models/model_run'+model_num+'.pt')
+state_dict = torch.load('models_SimpleNN/model_run'+model_num+'.pt')
 model.load_state_dict(state_dict)
 model.eval()
 

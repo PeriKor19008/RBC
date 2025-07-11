@@ -1,17 +1,19 @@
 import torch
-from torch.utils.data import DataLoader
+from torch import optim
+from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
-from model import SimpleModel  # Assuming you have a separate model.py
+from model import SimpleModel, CNNModel  # Assuming you have a separate model.py
 from RBCDataset import RBCDatasetDB  # Assuming you have your dataset class
+from src.model.train import train_model_val_loss, get_next_run_number
 from train import train_model  # function to train and log results
 import matplotlib.pyplot as plt
 import os
-from train import plot_and_save_loss_graph
+from train import plot_and_save_loss_graph, plot_loss_graphs
 from Data.DB_setup.db_config import DB_CONFIG
 
 #
 
-def default_run(lr,bs,l,ne):
+def default_run_NN(lr,bs,l,ne):
     learning_rate = lr
     batch_size = bs
     layers = l
@@ -37,10 +39,51 @@ def default_run(lr,bs,l,ne):
                              save_dir="comp_graphs")
 
 
+
+def train_CNN(batchSize, epochs, layers):
+    # ---create datasets---
+    full_dataset = RBCDatasetDB(db_config=DB_CONFIG, use_log_image=False)
+    train_size = int(0.8 * len(full_dataset))
+    val_size = len(full_dataset) - train_size
+    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+
+    # -----create dataloader----
+    batch_size = batchSize
+    dataloaders = {
+        'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True),
+        'val': DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
+    }
+
+    #---Init model, loss, opt---
+    model = CNNModel()
+    criterion = torch.nn.MSELoss()
+    learning_rate = 0.001
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    #---define params---
+    num_epochs = epochs
+
+
+    #--- train---
+    train_losses, val_losses = train_model_val_loss(
+        model=model,
+        dataloaders=dataloaders,
+        criterion=criterion,
+        optimizer=optimizer,
+        num_epochs=num_epochs,
+        batch_size=batch_size,
+        learning_rate=learning_rate,
+        layers=layers
+    )
+    run_number = get_next_run_number()
+    plot_loss_graphs(train_losses, val_losses,run_number, num_epochs, learning_rate, batch_size, layers)
+
+
 if __name__ == "__main__":
     os.makedirs("comp_graphs", exist_ok=True)
+    train_CNN(32,10,"Test")
 
-    default_run(0.001,32,[2500,1000,128,4],40)
 
 
 

@@ -753,3 +753,22 @@ Epoch 39 complete. Loss: 130398.1274
 Epoch 40 complete. Loss: 130739.4939
 Finished Training and saved the model.
 ---------------------------------------------------------
+
+run #19:
+Hidden Layers: T --> e --> s
+Number of Epochs: 10
+Learning Rate: 0.001
+Batch Size: 32
+Using device: cpu
+Epoch 1 complete. Loss: 779787.0200
+Epoch 2 complete. Loss: 67861.8139
+Epoch 3 complete. Loss: 40025.0391
+Epoch 4 complete. Loss: 26877.5645
+Epoch 5 complete. Loss: 18265.9423
+Epoch 6 complete. Loss: 14408.2082
+Epoch 7 complete. Loss: 12892.8939
+Epoch 8 complete. Loss: 10257.4375
+Epoch 9 complete. Loss: 9656.3143
+Epoch 10 complete. Loss: 8580.6996
+Finished Training and saved the model.
+---------------------------------------------------------

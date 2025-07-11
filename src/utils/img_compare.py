@@ -33,7 +33,7 @@ def compare_images(image_data1, image_data2, use_log):
     plt.colorbar(label='Difference (img1 - img2)')
     plt.title("Signed Image Difference (Color)")
     plt.axis('off')
-    plt.savefig("../model/graphs/img_cmp.png", dpi=300, bbox_inches='tight')
+    plt.savefig("../model/graphs_SimpleNN/img_cmp.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 
@@ -95,7 +95,7 @@ def pixel_variance_deviation(file):
     plt.colorbar(label="Pixel Std. Dev.")
     plt.title("Per-pixel Change Across Sequence")
     plt.axis('off')
-    plt.savefig("../model/graphs/std_map_heatmap.png", dpi=300, bbox_inches='tight')
+    plt.savefig("../model/graphs_SimpleNN/std_map_heatmap.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 # === Example usage ===

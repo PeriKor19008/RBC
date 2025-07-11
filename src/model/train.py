@@ -5,9 +5,31 @@ import os
 import matplotlib.pyplot as plt
 
 
+def plot_loss_graphs(train_losses, val_losses,run_number, num_epochs, learning_rate, batch_size, layers, filename="graphs"):
+    epochs = range(1, len(train_losses) + 1)
+
+    plt.figure(figsize=(8, 6))
+    plt.plot(epochs, train_losses, 'b-', label='Training Loss')
+    plt.plot(epochs, val_losses, 'r-', label='Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss over Epochs')
+    plt.legend()
+    plt.grid(True)
+
+    # Add the training parameters to the graph
+    text = f"Epochs: {num_epochs}\nLR: {learning_rate}\nBatch Size: {batch_size}\nLayers: {layers}"
+    plt.text(0.95, 0.95, text, ha='right', va='top', transform=plt.gca().transAxes,
+             fontsize=10, bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=1'))
+
+    # Save the graph to the 'graphs_SimpleNN' folder with filename 'loss_graph_runX.png'
+    plt.savefig(os.path.join(filename, f'loss_graph_run{layers}_{run_number}.png'))
+    plt.close()
+
+
 # Function to plot the loss graph and save it
-def plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate, batch_size, layers, save_dir='graphs'):
-    # Create the graphs directory if it doesn't exist
+def plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate, batch_size, layers, save_dir='graphs_Simple'):
+    # Create the graphs_SimpleNN directory if it doesn't exist
     os.makedirs(save_dir, exist_ok=True)
 
     # Plotting the loss graph
@@ -24,7 +46,7 @@ def plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate
     plt.text(0.95, 0.95, text, ha='right', va='top', transform=plt.gca().transAxes,
              fontsize=10, bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=1'))
 
-    # Save the graph to the 'graphs' folder with filename 'loss_graph_runX.png'
+    # Save the graph to the 'graphs_SimpleNN' folder with filename 'loss_graph_runX.png'
     plt.savefig(os.path.join(save_dir, f'loss_graph_run{run_number}.png'))
     plt.close()
 
@@ -62,7 +84,7 @@ def log_run_details(num_epochs, learning_rate, batch_size, layers, final_loss, d
         f.write(f"Finished Training and saved the model.\n")
         f.write(f"---------------------------------------------------------\n")
 
-        plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate, batch_size, layers,save_dir='graphs')
+        plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate, batch_size, layers, save_dir='graphs_SimpleNN')
 
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate, layers):
@@ -103,11 +125,70 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, batch_size
     print(f"Finished Training. Final Loss: {final_loss:.4f}")
 
     # Save trained model weights
-    os.makedirs("models", exist_ok=True)
-    model_save_path = f"models/model_run{get_next_run_number() - 1}.pt"
+    os.makedirs("models_Simple", exist_ok=True)
+    model_save_path = f"models_Simple/model_run{get_next_run_number() - 1}.pt"
     torch.save(model.state_dict(), model_save_path)
     print(f"Model saved to {model_save_path}")
 
     # Log run details after training
     log_run_details(num_epochs, learning_rate, batch_size, layers, final_loss, device, epoch_losses)
     return epoch_losses
+
+
+def train_model_val_loss (model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate, layers=None):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    model.to(device)
+
+    epoch_losses = []
+    val_losses = []
+
+    best_model_wts = copy.deepcopy(model.state_dict())
+    best_val_loss = float('inf')
+
+    for epoch in range(num_epochs):
+        # === Training Phase ===
+        model.train()
+        running_loss = 0.0
+        for inputs, labels in dataloaders['train']:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+
+        epoch_loss = running_loss / len(dataloaders['train'])
+        epoch_losses.append(epoch_loss)
+
+        # === Validation Phase ===
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for inputs, labels in dataloaders.get('val', []):  # safe if val not provided
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                val_loss += loss.item()
+        val_loss /= max(1, len(dataloaders.get('val', [])))  # avoid div by zero
+        val_losses.append(val_loss)
+
+        print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}")
+
+        # Save best model
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            best_model_wts = copy.deepcopy(model.state_dict())
+
+    print(f"Finished Training. Final Val Loss: {best_val_loss:.4f}")
+    os.makedirs("models", exist_ok=True)
+    model_save_path = f"models/model_run{get_next_run_number() - 1}.pt"
+    torch.save(best_model_wts, model_save_path)
+    print(f"Model saved to {model_save_path}")
+
+    return epoch_losses, val_losses
