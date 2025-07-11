@@ -24,14 +24,16 @@ def compare_images(image_data1, image_data2, use_log):
     img1 = np.array(img1)
     img2 = np.array(img2)
 
-    diff =(img1 - img2)
+
+    diff = (img1 - img2)
+    diff2d = diff.reshape((50,50))
     # Create and show image
     # Display with diverging colormap
-    plt.imshow(diff, cmap='seismic', vmin=-np.max(np.abs(diff)), vmax=np.max(np.abs(diff)))
+    plt.imshow(diff2d, cmap='seismic', vmin=-np.max(np.abs(diff2d)), vmax=np.max(np.abs(diff2d)))
     plt.colorbar(label='Difference (img1 - img2)')
     plt.title("Signed Image Difference (Color)")
     plt.axis('off')
-    plt.savefig("img_cmp.png", dpi=300, bbox_inches='tight')
+    plt.savefig("../model/graphs/img_cmp.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 
@@ -93,13 +95,13 @@ def pixel_variance_deviation(file):
     plt.colorbar(label="Pixel Std. Dev.")
     plt.title("Per-pixel Change Across Sequence")
     plt.axis('off')
-    plt.savefig("std_map_heatmap.png", dpi=300, bbox_inches='tight')
+    plt.savefig("../model/graphs/std_map_heatmap.png", dpi=300, bbox_inches='tight')
     plt.show()
 
 # === Example usage ===
 if __name__ == '__main__':
     db = ImageDB()
-    #compare_images(db.search_image_by_all_dtr(7000,2250,600,45),db.search_image_by_all_dtr(7000,2250,600,100),0)
+    compare_images(db.search_image_by_all_dtr(7000,2250,600,45),db.search_image_by_all_dtr(7000,2250,600,100),0)
     #file_comp("../../Data/results/Refindx1.005/0450015006001a.f06", "../../Data/results/Refindx1.075/0450015006001a.f06")
-    pixel_variance_deviation("0450015006001a.f06")
+    #pixel_variance_deviation("0450015006001a.f06")
 
