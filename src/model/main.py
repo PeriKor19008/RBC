@@ -2,8 +2,9 @@ import torch
 from torch import optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
-from model import SimpleModel, CNNModel  # Assuming you have a separate model.py
+from model import SimpleModel, CNNModel, FlexibleCNN  # Assuming you have a separate model.py
 from RBCDataset import RBCDatasetDB  # Assuming you have your dataset class
+from src.model.plot import plot_all_val_losses
 from src.model.train import train_model_val_loss, get_next_run_number
 from train import train_model  # function to train and log results
 import matplotlib.pyplot as plt
@@ -56,33 +57,51 @@ def train_CNN(batchSize, epochs, layers):
     }
 
     #---Init model, loss, opt---
-    model = CNNModel()
-    criterion = torch.nn.MSELoss()
-    learning_rate = 0.001
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    all_val_losses = {}  # Dictionary to collect val losses with a label
 
-    #---define params---
-    num_epochs = epochs
+    conv_configs = [
+        [("conv", 16), ("conv", 32), ("conv", 64)],
+        [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 64)],
+        [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 64), ("conv", 64)]
+    ]
+    fc_configs = [
+        [128],
+        [128, 256]
+    ]
+
+    for  c in conv_configs:
+        for  f in fc_configs:
+            model = FlexibleCNN(c, f)
+            criterion = torch.nn.MSELoss()
+            learning_rate = 0.001
+            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+            #---define params---
+            num_epochs = epochs
+            layers = f"conv{len(c)}_fc{len(f)}"
 
 
-    #--- train---
-    train_losses, val_losses = train_model_val_loss(
-        model=model,
-        dataloaders=dataloaders,
-        criterion=criterion,
-        optimizer=optimizer,
-        num_epochs=num_epochs,
-        batch_size=batch_size,
-        learning_rate=learning_rate,
-        layers=layers
-    )
-    run_number = get_next_run_number()
-    plot_loss_graphs(train_losses, val_losses,run_number, num_epochs, learning_rate, batch_size, layers)
+            #--- train---
+            train_losses, val_losses = train_model_val_loss(
+                model=model,
+                dataloaders=dataloaders,
+                criterion=criterion,
+                optimizer=optimizer,
+                num_epochs=num_epochs,
+                batch_size=batch_size,
+                learning_rate=learning_rate,
+                layers=layers
+            )
+            run_number = get_next_run_number()
+            plot_loss_graphs(train_losses, val_losses,run_number, num_epochs, learning_rate, batch_size, layers)
 
+            #--- save all val loss curves---
+            all_val_losses[layers] = val_losses
+    plot_all_val_losses(all_val_losses)
 
 if __name__ == "__main__":
     os.makedirs("comp_graphs", exist_ok=True)
-    train_CNN(32,10,"Test")
+    train_CNN(32,30,"mult_run")
 
 
 

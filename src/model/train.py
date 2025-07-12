@@ -126,7 +126,7 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, batch_size
 
     # Save trained model weights
     os.makedirs("models_Simple", exist_ok=True)
-    model_save_path = f"models_Simple/model_run{get_next_run_number() - 1}.pt"
+    model_save_path = f"models_Simple/model_run{get_next_run_number()}.pt"
     torch.save(model.state_dict(), model_save_path)
     print(f"Model saved to {model_save_path}")
 
@@ -187,7 +187,7 @@ def train_model_val_loss (model, dataloaders, criterion, optimizer, num_epochs, 
 
     print(f"Finished Training. Final Val Loss: {best_val_loss:.4f}")
     os.makedirs("models", exist_ok=True)
-    model_save_path = f"models/model_run{get_next_run_number() - 1}.pt"
+    model_save_path = f"models/model_run{get_next_run_number()}.pt"
     torch.save(best_model_wts, model_save_path)
     print(f"Model saved to {model_save_path}")
 
