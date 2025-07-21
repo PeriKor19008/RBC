@@ -99,9 +99,36 @@ def train_CNN(batchSize, epochs, layers):
             all_val_losses[layers] = val_losses
     plot_all_val_losses(all_val_losses)
 
+
+
+def train_autoencoder(batchSize, epochs, layers):
+    from model.fc_autoencoder import FCAutoencoder
+
+    model = FCAutoencoder(latent_dim=64, hidden_dims=[1024, 512, 128])
+    criterion = torch.nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    batch_size = batchSize
+    dataloaders = {
+        'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True),
+        'val': DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
+    }
+
+    train_losses, val_losses = train_autoencoder(
+        model=model,
+        dataloaders=dataloaders,
+        criterion=criterion,
+        optimizer=optimizer,
+        num_epochs=epochs,
+        batch_size=batch_size,
+        learning_rate=0.001
+    )
+
+
 if __name__ == "__main__":
-    os.makedirs("comp_graphs", exist_ok=True)
-    train_CNN(32,30,"mult_run")
+    #os.makedirs("comp_graphs", exist_ok=True)
+    #train_CNN(32,30,"mult_run")
+    train_autoencoder(32,20,0)
 
 
 
