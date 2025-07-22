@@ -192,3 +192,52 @@ def train_model_val_loss (model, dataloaders, criterion, optimizer, num_epochs, 
     print(f"Model saved to {model_save_path}")
 
     return epoch_losses, val_losses
+
+
+
+def train_autoencoder(model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    model.to(device)
+
+    train_losses = []
+    val_losses = []
+
+    for epoch in range(num_epochs):
+        model.train()
+        running_loss = 0.0
+        for inputs, _ in dataloaders['train']:  # labels are ignored
+            inputs = inputs.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, inputs)  # compare to input
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+
+        epoch_train_loss = running_loss / len(dataloaders['train'])
+        train_losses.append(epoch_train_loss)
+
+        # --- Validation loss ---
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for inputs, _ in dataloaders['val']:
+                inputs = inputs.to(device)
+                outputs = model(inputs)
+                loss = criterion(outputs, inputs)
+                val_loss += loss.item()
+        epoch_val_loss = val_loss / len(dataloaders['val'])
+        val_losses.append(epoch_val_loss)
+
+        print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {epoch_train_loss:.4f}, Val Loss: {epoch_val_loss:.4f}")
+
+    # --- Save the trained model ---
+    os.makedirs("models", exist_ok=True)
+    model_path = "models/autoencoder_final.pt"
+    torch.save(model.state_dict(), model_path)
+    print(f"Model saved to {model_path}")
+
+    return train_losses, val_losses

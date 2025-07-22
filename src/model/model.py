@@ -2,6 +2,47 @@ import torch
 import torch.nn as nn
 
 
+import torch
+import torch.nn as nn
+
+class FCAutoencoder(nn.Module):
+    def __init__(self, input_dim=2500, latent_dim=64, hidden_dims=[1024, 512, 128]):
+        super(FCAutoencoder, self).__init__()
+
+        # Encoder
+        encoder_layers = []
+        prev_dim = input_dim
+        for h in hidden_dims:
+            encoder_layers.append(nn.Linear(prev_dim, h))
+            encoder_layers.append(nn.ReLU())
+            prev_dim = h
+        encoder_layers.append(nn.Linear(prev_dim, latent_dim))
+        self.encoder = nn.Sequential(*encoder_layers)
+
+        # Decoder (reverse of encoder)
+        decoder_layers = []
+        prev_dim = latent_dim
+        for h in reversed(hidden_dims):
+            decoder_layers.append(nn.Linear(prev_dim, h))
+            decoder_layers.append(nn.ReLU())
+            prev_dim = h
+        decoder_layers.append(nn.Linear(prev_dim, input_dim))
+        decoder_layers.append(nn.Sigmoid())  # output in range [0,1]
+        self.decoder = nn.Sequential(*decoder_layers)
+
+    def forward(self, x):
+        # Flatten input image [B, 1, 50, 50] → [B, 2500]
+        x = x.view(x.size(0), -1)
+
+        # Encode → latent → decode
+        z = self.encoder(x)
+        x_recon = self.decoder(z)
+
+        # Reshape back to image [B, 1, 50, 50]
+        return x_recon.view(x.size(0), 1, 50, 50)
+
+
+
 class CNNModel(nn.Module):
     def __init__(self):
         super(CNNModel, self).__init__()
