@@ -2,7 +2,7 @@ import torch
 from torch import optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
-from model import SimpleModel, CNNModel, FlexibleCNN  # Assuming you have a separate model.py
+from model import SimpleModel, CNNModel, FlexibleCNN, Aut  # Assuming you have a separate model.py
 from RBCDataset import RBCDatasetDB  # Assuming you have your dataset class
 from src.model.plot import plot_all_val_losses
 from src.model.train import train_model_val_loss, get_next_run_number
@@ -102,7 +102,7 @@ def train_CNN(batchSize, epochs, layers):
 
 
 def train_autoencoder(batchSize, epochs, layers):
-    from model.fc_autoencoder import FCAutoencoder
+
 
     model = FCAutoencoder(latent_dim=64, hidden_dims=[1024, 512, 128])
     criterion = torch.nn.MSELoss()

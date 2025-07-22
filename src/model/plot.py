@@ -17,3 +17,4 @@ def plot_all_val_losses(all_val_losses, filename="all_val_losses.png"):
     plt.savefig(path)
     plt.close()
     print(f"All validation losses plot saved to: {path}")
+    

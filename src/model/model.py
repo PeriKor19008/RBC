@@ -36,6 +36,7 @@ class FlexibleCNN(nn.Module):
     def __init__(self,  conv_config=[("conv", 16), ("conv", 32)], fc_config=[128]):
         super(FlexibleCNN, self).__init__()
         input_shape = (1, 50, 50)
+
         output_dim = 4
         self.conv_layers = nn.Sequential()
         in_channels = input_shape[0]
