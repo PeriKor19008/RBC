@@ -42,6 +42,23 @@ class RBCDatasetDB(Dataset):
         return image, target
 
     def __del__(self):
-        # Close DB connection when the dataset is deleted
-        self.cursor.close()
-        self.conn.close()
+        try:
+            cur = getattr(self, "_cursor", None)
+            if cur is not None:
+                try:
+                    cur.close()
+                except Exception:
+                    pass
+            self._cursor = None
+
+            conn = getattr(self, "_conn", None)
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            self._conn = None
+        except Exception:
+            # swallow anything at interpreter shutdown
+            pass
+

@@ -55,12 +55,10 @@ def train_CNN(batchSize, epochs, layers):
 
     conv_configs = [
         [("conv", 16), ("conv", 32), ("conv", 64)],
-        [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 64)],
-        [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 64), ("conv", 64)]
+
     ]
     fc_configs = [
-        [128],
-        [128, 256]
+        [128]
     ]
 
     for  c in conv_configs:
@@ -126,8 +124,8 @@ def run_autoencoder(batchSize, epochs, layers):
 
 if __name__ == "__main__":
     #os.makedirs("comp_graphs", exist_ok=True)
-    train_CNN(32,30,"mult_run")
-    #run_autoencoder(32,20,0)
+    #train_CNN(32,5,"mult_run")
+    run_autoencoder(32,2,0)
 
 
 
