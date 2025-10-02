@@ -1,3 +1,6 @@
 Data/results
 documentation/
 src/model/models_SimpleNN/
+# Python cache/compiled files
+__pycache__/
+*.pyc

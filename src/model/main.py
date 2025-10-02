@@ -1,29 +1,23 @@
-import torch
 from torch import optim
 from torch.utils.data import DataLoader, random_split
-from torchvision import transforms
-from model import SimpleModel, CNNModel, FlexibleCNN, Aut  # Assuming you have a separate model.py
-from RBCDataset import RBCDatasetDB  # Assuming you have your dataset class
+from model import SimpleModel, CNNModel, FlexibleCNN, FCAutoencoder
+from RBCDataset import RBCDatasetDB
 from src.model.plot import plot_all_val_losses
-from src.model.train import train_model_val_loss, get_next_run_number
-from train import train_model  # function to train and log results
-import matplotlib.pyplot as plt
+from train import *
 import os
-from train import plot_and_save_loss_graph, plot_loss_graphs
 from Data.DB_setup.db_config import DB_CONFIG
 
-#
 
+full_dataset = RBCDatasetDB(db_config=DB_CONFIG, use_log_image=False)
 def default_run_NN(lr,bs,l,ne):
     learning_rate = lr
     batch_size = bs
     layers = l
     num_epochs = ne
 
-    dataset = RBCDatasetDB(db_config=DB_CONFIG, use_log_image=True)
-    print(f"Number of samples in dataset: {len(dataset)}")
+    (f"Number of samples in dataset: {len(full_dataset)}")
 
-    dataloaders = {'train': DataLoader(dataset, batch_size=batch_size, shuffle=True)}
+    dataloaders = {'train': DataLoader(full_dataset, batch_size=batch_size, shuffle=True)}
     # Initialize model, loss, and optimizer
     model = SimpleModel(layers)
     criterion = torch.nn.MSELoss()
@@ -43,7 +37,7 @@ def default_run_NN(lr,bs,l,ne):
 
 def train_CNN(batchSize, epochs, layers):
     # ---create datasets---
-    full_dataset = RBCDatasetDB(db_config=DB_CONFIG, use_log_image=False)
+
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
@@ -101,13 +95,17 @@ def train_CNN(batchSize, epochs, layers):
 
 
 
-def train_autoencoder(batchSize, epochs, layers):
+def run_autoencoder(batchSize, epochs, layers):
 
 
     model = FCAutoencoder(latent_dim=64, hidden_dims=[1024, 512, 128])
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     batch_size = batchSize
+
+    train_size = int(0.8 * len(full_dataset))
+    val_size = len(full_dataset) - train_size
+    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
     dataloaders = {
         'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True),
         'val': DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -125,10 +123,11 @@ def train_autoencoder(batchSize, epochs, layers):
     )
 
 
+
 if __name__ == "__main__":
     #os.makedirs("comp_graphs", exist_ok=True)
-    #train_CNN(32,30,"mult_run")
-    train_autoencoder(32,20,0)
+    train_CNN(32,30,"mult_run")
+    #run_autoencoder(32,20,0)
 
 
 

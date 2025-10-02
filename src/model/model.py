@@ -2,9 +2,6 @@ import torch
 import torch.nn as nn
 
 
-import torch
-import torch.nn as nn
-
 class FCAutoencoder(nn.Module):
     def __init__(self, input_dim=2500, latent_dim=64, hidden_dims=[1024, 512, 128]):
         super(FCAutoencoder, self).__init__()
