@@ -6,6 +6,8 @@ from src.model.plot import plot_all_val_losses
 from train import *
 import os
 from Data.DB_setup.db_config import DB_CONFIG
+from src.utils.run_utils import compare_runs_from_logs
+from datetime import datetime
 
 
 full_dataset = RBCDatasetDB(db_config=DB_CONFIG, use_log_image=False)
@@ -35,9 +37,8 @@ def default_run_NN(lr,bs,l,ne):
 
 
 
-def train_CNN(batchSize, epochs, layers):
+def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None):
     # ---create datasets---
-
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
@@ -47,53 +48,49 @@ def train_CNN(batchSize, epochs, layers):
     dataloaders = {
         'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True),
         'val': DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-
     }
 
-    #---Init model, loss, opt---
-    all_val_losses = {}  # Dictionary to collect val losses with a label
+    # defaults
+    if fc_config is None:
+        fc_config = [128]
 
-    conv_configs = [
-        [("conv", 16), ("conv", 32), ("conv", 64)],
+    # --- build model, loss, opt ---
+    model = FlexibleCNN(conv_config, fc_config)
+    criterion = torch.nn.MSELoss()
+    learning_rate = lr_rate
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-    ]
-    fc_configs = [
-        [128]
-    ]
+    num_epochs = epochs
+    # make a string label for plots/keys (do NOT use the list itself)
+    label = f"conv{len(conv_config)}_fc{len(fc_config)}"
 
-    for  c in conv_configs:
-        for  f in fc_configs:
-            model = FlexibleCNN(c, f)
-            criterion = torch.nn.MSELoss()
-            learning_rate = 0.001
-            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    # --- train ---
+    train_losses, val_losses, run_dir = train_model_val_loss(
+        model=model,
+        dataloaders=dataloaders,
+        criterion=criterion,
+        optimizer=optimizer,
+        num_epochs=epochs,
+        batch_size=batchSize,
+        learning_rate=learning_rate,
+        layers=label,
+        conv_config=conv_config,  # <--- NEW
+        fc_config=fc_config  # <--- NEW
+    )
 
-            #---define params---
-            num_epochs = epochs
-            layers = f"conv{len(c)}_fc{len(f)}"
+    run_number = get_next_run_number()
+    plot_loss_graphs(train_losses, val_losses, run_number, num_epochs,
+                     learning_rate, batch_size, label)
 
-
-            #--- train---
-            train_losses, val_losses = train_model_val_loss(
-                model=model,
-                dataloaders=dataloaders,
-                criterion=criterion,
-                optimizer=optimizer,
-                num_epochs=num_epochs,
-                batch_size=batch_size,
-                learning_rate=learning_rate,
-                layers=layers
-            )
-            run_number = get_next_run_number()
-            plot_loss_graphs(train_losses, val_losses,run_number, num_epochs, learning_rate, batch_size, layers)
-
-            #--- save all val loss curves---
-            all_val_losses[layers] = val_losses
+    # if you still want the combined “all val” plot with a dict:
+    all_val_losses = {label: val_losses}
     plot_all_val_losses(all_val_losses)
 
+    return train_losses, val_losses, run_dir
 
 
-def run_autoencoder(batchSize, epochs, layers):
+
+def run_autoencoder(batchSize, epochs,lr_rate, layers):
 
 
     model = FCAutoencoder(latent_dim=64, hidden_dims=[1024, 512, 128])
@@ -110,22 +107,76 @@ def run_autoencoder(batchSize, epochs, layers):
 
     }
 
-    train_losses, val_losses = train_autoencoder(
+    train_losses, val_losses, run_dir  = train_autoencoder(
         model=model,
         dataloaders=dataloaders,
         criterion=criterion,
         optimizer=optimizer,
         num_epochs=epochs,
         batch_size=batch_size,
-        learning_rate=0.001
+        learning_rate=lr_rate
     )
 
+    return train_losses, val_losses, run_dir
+
+def train_single_model():
+    train_CNN(32,2, [("conv", 16), ("conv", 32), ("conv", 64)], [128])
+
+
+def multi_train():
+    run_dirs = []
+
+    # === explicit CNN runs (no loops) ===
+    _, _, rd = train_CNN(32, 40,0.001, [("conv", 16), ("conv", 32), ("conv", 64)], [128])
+    run_dirs.append(rd)
+
+    _, _, rd = train_CNN(32, 40, 0.0001,[("conv", 16), ("conv", 32), ("conv", 64)], [128])
+    run_dirs.append(rd)
+
+    _, _, rd = train_CNN(32, 40,0.001, [("conv", 16), ("conv", 32), ("conv", 64)], [128, 250])
+    run_dirs.append(rd)
+
+    _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64)], [128, 250])
+    run_dirs.append(rd)
+
+    _, _, rd = train_CNN(32, 40, 0.001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128])
+    run_dirs.append(rd)
+
+    _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128])
+    run_dirs.append(rd)
+
+    _, _, rd = train_CNN(32, 40, 0.001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128, 250])
+    run_dirs.append(rd)
+
+    _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128, 250])
+    run_dirs.append(rd)
+
+    # (add more runs exactly as you like)
+    # _, _, rd = train_CNN(64, 10, [("conv",16),("conv",32),("conv",64),("conv",64)], [128,256]); run_dirs.append(rd)
+
+    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    out_dir = os.path.join("models", "comparisons", ts)  # or "comparison" if that's your folder
+    os.makedirs(out_dir, exist_ok=True)
+
+    compare_runs_from_logs(
+        run_dirs,
+        os.path.join(out_dir, "cnn_manual_val.png"),
+        which="val",
+        title="CNN manual runs (val loss)"
+    )
+
+    compare_runs_from_logs(
+        run_dirs,
+        os.path.join(out_dir, "cnn_manual_train.png"),
+        which="train",
+        title="CNN manual runs (train loss)"
+    )
+
+    print(f"Saved comparisons in: {out_dir}")
 
 
 if __name__ == "__main__":
-    #os.makedirs("comp_graphs", exist_ok=True)
-    #train_CNN(32,5,"mult_run")
-    run_autoencoder(32,2,0)
+    multi_train()
 
 
 

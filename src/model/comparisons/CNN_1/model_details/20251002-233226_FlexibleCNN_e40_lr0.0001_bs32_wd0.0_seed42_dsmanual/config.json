@@ -1,0 +1,30 @@
+{
+  "arch": "FlexibleCNN",
+  "input_size": "1x50x50",
+  "epochs": 40,
+  "lr": 0.0001,
+  "batch_size": 32,
+  "weight_decay": 0.0,
+  "seed": 42,
+  "notes": "layers=conv3_fc2",
+  "dataset_fingerprint": "manual",
+  "layers": "conv3_fc2",
+  "conv_config": [
+    [
+      "conv",
+      16
+    ],
+    [
+      "conv",
+      32
+    ],
+    [
+      "conv",
+      64
+    ]
+  ],
+  "fc_config": [
+    128,
+    250
+  ]
+}

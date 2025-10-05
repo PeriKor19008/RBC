@@ -87,28 +87,36 @@ def _make_run_dirs(num_epochs, learning_rate, batch_size, layers, base_models_di
     return run_dir, figs_dir, run_id
 
 
-def log_run_details(num_epochs, learning_rate, batch_size, layers, final_loss, device, epoch_losses,
-                    run_log_path='mock_run_observations.txt', figs_dir='graphs_SimpleNN'):
+def log_run_details(num_epochs, learning_rate, batch_size, layers,
+                    final_loss, device, epoch_losses,  # train losses
+                    val_losses=None,                    # <-- NEW (optional)
+                    run_log_path='mock_run_observations.txt',
+                    figs_dir='graphs_SimpleNN'):
 
-    # Get the next run number (based on this log file)
-    run_number = get_next_run_number(run_log_path)
+    run_number = get_next_run_number(run_log_path) if os.path.exists(run_log_path) else 1
 
-    # Append to the (now per-run) log file
     with open(run_log_path, 'a') as f:
         f.write(f"\nrun #{run_number}:\n")
-        f.write(f"Hidden Layers: {layers[0]} --> {layers[1]} --> {layers[2]}\n")
+        if isinstance(layers, (list, tuple)) and len(layers) >= 3:
+            f.write(f"Hidden Layers: {layers[0]} --> {layers[1]} --> {layers[2]}\n")
+        else:
+            f.write(f"Layers: {layers}\n")
         f.write(f"Number of Epochs: {num_epochs}\n")
         f.write(f"Learning Rate: {learning_rate}\n")
         f.write(f"Batch Size: {batch_size}\n")
         f.write(f"Using device: {device}\n")
         for i in range(num_epochs):
-            f.write(f"Epoch {i + 1} complete. Loss: {epoch_losses[i]:.4f}\n")
+            # Train
+            f.write(f"Epoch {i + 1} train: {epoch_losses[i]:.6f}\n")
+            # Val (if provided)
+            if val_losses is not None and i < len(val_losses):
+                f.write(f"Epoch {i + 1} val: {val_losses[i]:.6f}\n")
         f.write(f"Finished Training and saved the model.\n")
         f.write(f"---------------------------------------------------------\n")
 
-    # Keep your old plot, but now save into this run's figs/
-    plot_and_save_loss_graph(epoch_losses, get_next_run_number(run_log_path), num_epochs,
-                             learning_rate, batch_size, layers, save_dir=figs_dir)
+    # keep your old plot, saved into this run’s figs/
+    plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate,
+                             batch_size, layers, save_dir=figs_dir)
 
 
 def train_model(model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate, layers):
@@ -155,17 +163,18 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs, batch_size
     run_log_path = os.path.join(run_dir, "run_log.txt")
     log_run_details(num_epochs, learning_rate, batch_size, layers, final_loss, device, epoch_losses,
                     run_log_path=run_log_path, figs_dir=figs_dir)
-    return epoch_losses
+    return epoch_losses, run_dir
 
 
-def train_model_val_loss(model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate, layers=None):
+def train_model_val_loss(model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate, layers=None, conv_config=None, fc_config=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     model.to(device)
 
     # === NEW: create this run's folders ===
     run_dir, figs_dir, run_id, arch_name = _start_run(
-        model, num_epochs, learning_rate, batch_size, layers
+        model, num_epochs, learning_rate, batch_size, layers,
+        extra_info={"conv_config": conv_config, "fc_config": fc_config}
     )
     epoch_losses = []
     val_losses = []
@@ -227,10 +236,12 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer, num_epochs, b
 
     # And log a small per-run text file
     run_log_path = os.path.join(run_dir, "run_log.txt")
-    log_run_details(num_epochs, learning_rate, batch_size, layers, best_val_loss, device, epoch_losses,
+    log_run_details(num_epochs, learning_rate, batch_size, layers,
+                    best_val_loss, device, epoch_losses,
+                    val_losses=val_losses,
                     run_log_path=run_log_path, figs_dir=figs_dir)
 
-    return epoch_losses, val_losses
+    return epoch_losses, val_losses, run_dir
 
 
 def train_autoencoder(model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate):
@@ -283,22 +294,21 @@ def train_autoencoder(model, dataloaders, criterion, optimizer, num_epochs, batc
     print(f"Model saved to {model_path}")
 
     # Save a quick plot of AE train loss using your old function
-    plot_and_save_loss_graph(train_losses, run_number=1, num_epochs=num_epochs,
-                             learning_rate=learning_rate, batch_size=batch_size, layers=layers, save_dir=figs_dir)
+    run_log_path = os.path.join(run_dir, "run_log.txt")
+    log_run_details(num_epochs, learning_rate, batch_size, layers,
+                    epoch_val_loss, device, train_losses,
+                    val_losses=val_losses,
+                    run_log_path=run_log_path, figs_dir=figs_dir)
 
-    return train_losses, val_losses
+    return train_losses, val_losses, run_dir
 
 
-def _start_run(model, num_epochs, learning_rate, batch_size, layers, base_models_dir="models"):
+def _start_run(model, num_epochs, learning_rate, batch_size, layers,
+               base_models_dir="models", extra_info=None):
     """
     Create a per-run folder grouped by architecture name and return paths.
-    Example structure:
-      models/FlexibleCNN/<run_id>/
-        figs/
-        config.json
-        (your checkpoints and logs)
     """
-    arch_name = type(model).__name__                # infer name: SimpleModel, FlexibleCNN, etc.
+    arch_name = type(model).__name__
     cfg = RunConfig(
         arch=arch_name,
         epochs=num_epochs,
@@ -307,16 +317,16 @@ def _start_run(model, num_epochs, learning_rate, batch_size, layers, base_models
         notes=f"layers={layers}"
     )
 
-    # Simple run id; no dataset fingerprint needed -> use a constant
     run_id = make_run_id(cfg, ds_fingerprint="manual")
-
-    # Group runs under the arch
     arch_base = os.path.join(base_models_dir, arch_name)
     run_dir = ensure_run_dir(arch_base, run_id)
     figs_dir = os.path.join(run_dir, "figs")
     os.makedirs(figs_dir, exist_ok=True)
 
-    # Save a tiny config for breadcrumbs
-    write_config(run_dir, cfg, ds_fingerprint="manual", extra={"layers": layers})
+    # NEW: store layers + any extra info (like conv_config/fc_config) into config.json
+    extra = {"layers": layers}
+    if extra_info:
+        extra.update(extra_info)
+    write_config(run_dir, cfg, ds_fingerprint="manual", extra=extra)
 
     return run_dir, figs_dir, run_id, arch_name
