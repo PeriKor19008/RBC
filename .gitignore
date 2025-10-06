@@ -1,14 +1,23 @@
-Data/results
-documentation/
+# Data & generated results
+Data/
+Data/results/
+outputs/
+src/outputs/
+src/mock_run/
+src/model/models/
 src/model/models_SimpleNN/
+src/model/graphs/
+src/model/graphs_SimpleNN/
+src/model/plots/
+src/model/complete_comparisons/
 
-# Python cache/compiled files
+# Python cache
 __pycache__/
-/outputs/
-/src/outputs/
-/src/model/models/
-/src/model/graphs/
-/src/model/plots/
+*.py[cod]
+
+# Big binaries (use LFS if you need them)
 *.pt
 *.pth
 *.onnx
+*.pdf
+*.odt
