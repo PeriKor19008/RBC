@@ -90,10 +90,13 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None):
 
 
 
-def run_autoencoder(batchSize, epochs,lr_rate, layers):
+def run_autoencoder(batchSize, epochs,lr_rate, h_layers=None, latent_dim=None):
 
-
-    model = FCAutoencoder(latent_dim=64, hidden_dims=[1024, 512, 128])
+    if h_layers is None:
+        h_layers = [1024, 512, 128]
+    if latent_dim is None:
+        latent_dim = 64
+    model = FCAutoencoder(latent_dim=latent_dim, hidden_dims=h_layers)
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     batch_size = batchSize
@@ -106,7 +109,7 @@ def run_autoencoder(batchSize, epochs,lr_rate, layers):
         'val': DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     }
-
+    label = f"[{','.join(str(x) for x in h_layers)}]-{latent_dim}"
     train_losses, val_losses, run_dir  = train_autoencoder(
         model=model,
         dataloaders=dataloaders,
@@ -114,7 +117,8 @@ def run_autoencoder(batchSize, epochs,lr_rate, layers):
         optimizer=optimizer,
         num_epochs=epochs,
         batch_size=batch_size,
-        learning_rate=lr_rate
+        learning_rate=lr_rate,
+        layers=label,
     )
 
     return train_losses, val_losses, run_dir
@@ -180,13 +184,13 @@ def multi_train_autoencoder():
 
     # === explicit AE runs (no loops) ===
     # (layers arg is unused by AE — pass anything, e.g., 0)
-    _, _, rd = run_autoencoder(32, 40, 0.001,1)
+    _, _, rd = run_autoencoder(32, 40, 0.0001,[1024, 512, 128], 64)
     run_dirs.append(rd)
-    _, _, rd = run_autoencoder(32, 60, 0.001,1)
+    _, _, rd = run_autoencoder(32, 40, 0.0001,[2000,1024, 512, 128], 64)
     run_dirs.append(rd)
-    _, _, rd = run_autoencoder(64, 40, 0.0001,1)
+    _, _, rd = run_autoencoder(32, 40, 0.0001,[1024, 512, 128], 100)
     run_dirs.append(rd)
-    _, _, rd = run_autoencoder(64, 60, 0.0001,1)
+    _, _, rd = run_autoencoder(32, 40, 0.0001,[2000,1024, 512, 128], 32)
     run_dirs.append(rd)
 
     # === timestamped comparison folder ===
@@ -217,6 +221,7 @@ def multi_train_autoencoder():
 if __name__ == "__main__":
     #multi_train_CNN()
     multi_train_autoencoder()
+
 
 
 

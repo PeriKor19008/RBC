@@ -244,13 +244,15 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer, num_epochs, b
     return epoch_losses, val_losses, run_dir
 
 
-def train_autoencoder(model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate):
+def train_autoencoder(model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate, layers=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     model.to(device)
 
     # === NEW: create this run's folders ===
-    layers = ["AE", "AE", "AE"]  # placeholder to keep the same function signatures
+    if layers is None:
+        layers = ["AE", "AE", "AE"]  # placeholder to keep the same function signatures
+
     run_dir, figs_dir, run_id, arch_name = _start_run(
         model, num_epochs, learning_rate, batch_size, layers
     )
