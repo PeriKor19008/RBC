@@ -6,3 +6,8 @@ outputs
 __pycache__/
 *.pyc
 .idea
+/src/outputs/
+*.pt
+*.pth
+*.onnx
+src.zip
