@@ -24,7 +24,7 @@ class FCAutoencoder(nn.Module):
             decoder_layers.append(nn.ReLU())
             prev_dim = h
         decoder_layers.append(nn.Linear(prev_dim, input_dim))
-        decoder_layers.append(nn.Sigmoid())  # output in range [0,1]
+
         self.decoder = nn.Sequential(*decoder_layers)
 
     def forward(self, x):

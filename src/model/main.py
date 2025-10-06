@@ -123,7 +123,7 @@ def train_single_model():
     train_CNN(32,2, [("conv", 16), ("conv", 32), ("conv", 64)], [128])
 
 
-def multi_train():
+def multi_train_CNN():
     run_dirs = []
 
     # === explicit CNN runs (no loops) ===
@@ -175,8 +175,49 @@ def multi_train():
     print(f"Saved comparisons in: {out_dir}")
 
 
+def multi_train_autoencoder():
+    run_dirs = []
+
+    # === explicit AE runs (no loops) ===
+    # (layers arg is unused by AE — pass anything, e.g., 0)
+    _, _, rd = run_autoencoder(32, 40, 0.001,1)
+    run_dirs.append(rd)
+    _, _, rd = run_autoencoder(32, 60, 0.001,1)
+    run_dirs.append(rd)
+    _, _, rd = run_autoencoder(64, 40, 0.0001,1)
+    run_dirs.append(rd)
+    _, _, rd = run_autoencoder(64, 60, 0.0001,1)
+    run_dirs.append(rd)
+
+    # === timestamped comparison folder ===
+    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    out_dir = os.path.join("models", "comparisons", ts)
+    os.makedirs(out_dir, exist_ok=True)
+
+    compare_runs_from_logs(
+        run_dirs,
+        os.path.join(out_dir, "ae_manual_val.png"),
+        which="val",
+        title="Autoencoder manual runs (val loss)"
+    )
+    compare_runs_from_logs(
+        run_dirs,
+        os.path.join(out_dir, "ae_manual_train.png"),
+        which="train",
+        title="Autoencoder manual runs (train loss)"
+    )
+
+    # Optional: manifest for traceability
+    with open(os.path.join(out_dir, "manifest.txt"), "w") as f:
+        f.write("AE runs compared:\n")
+        for rd in run_dirs:
+            f.write(f"- {rd}\n")
+
+    print(f"Saved comparisons in: {out_dir}")
 if __name__ == "__main__":
-    multi_train()
+    #multi_train_CNN()
+    multi_train_autoencoder()
+
 
 
 
