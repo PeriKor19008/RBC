@@ -59,7 +59,7 @@ def multi_train_autoencoder():
 
     # === timestamped comparison folder ===
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-    out_dir = os.path.join("models", "comparisons", ts)
+    out_dir = Path(__file__).resolve().parents[2] / "outputs" / "comparisons" / ts
     os.makedirs(out_dir, exist_ok=True)
 
     compare_runs_from_logs(

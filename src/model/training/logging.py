@@ -31,7 +31,7 @@ def log_run_details(num_epochs, learning_rate, batch_size, layers,
 
     # keep your old plot, saved into this run’s figs/
     plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate,
-                             batch_size, layers, save_dir=figs_dir)
+                             batch_size, layers, out_dir=figs_dir)
 
 
 def get_next_run_number(log_file='mock_run_observations.txt'):

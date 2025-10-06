@@ -1,10 +1,14 @@
 import os
 from src.utils.run_utils import *
+from pathlib import Path
+
+# project root = parent of "src"
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_DEFAULT_MODELS_DIR = str(Path(__file__).resolve().parents[3] / "outputs" / "models")
+
 def start_run(model, num_epochs, learning_rate, batch_size, layers,
-               base_models_dir="models", extra_info=None):
-    """
-    Create a per-run folder grouped by architecture name and return paths.
-    """
+               base_models_dir=_DEFAULT_MODELS_DIR, extra_info=None):
+    Path(_DEFAULT_MODELS_DIR).mkdir(parents=True, exist_ok=True)
     arch_name = type(model).__name__
     cfg = RunConfig(
         arch=arch_name,

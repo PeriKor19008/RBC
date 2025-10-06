@@ -55,12 +55,12 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None):
     )
 
     run_number = get_next_run_number()
-    plot_loss_graphs(train_losses, val_losses, run_number, num_epochs,
-                     learning_rate, batch_size, label)
+    # plot_loss_graphs(train_losses, val_losses, run_number, num_epochs,
+    #                  learning_rate, batch_size, label)
 
     # if you still want the combined “all val” plot with a dict:
     all_val_losses = {label: val_losses}
-    plot_all_val_losses(all_val_losses)
+    #plot_all_val_losses(all_val_losses)
 
     return train_losses, val_losses, run_dir
 
@@ -69,35 +69,35 @@ def multi_train_CNN():
     run_dirs = []
 
     # === explicit CNN runs (no loops) ===
-    _, _, rd = train_CNN(32, 40,0.001, [("conv", 16), ("conv", 32), ("conv", 64)], [128])
+    _, _, rd = train_CNN(32, 1,0.001, [("conv", 16), ("conv", 32), ("conv", 64)], [128])
     run_dirs.append(rd)
 
-    _, _, rd = train_CNN(32, 40, 0.0001,[("conv", 16), ("conv", 32), ("conv", 64)], [128])
+    _, _, rd = train_CNN(32, 1, 0.0001,[("conv", 16), ("conv", 32), ("conv", 64)], [128])
     run_dirs.append(rd)
 
-    _, _, rd = train_CNN(32, 40,0.001, [("conv", 16), ("conv", 32), ("conv", 64)], [128, 250])
-    run_dirs.append(rd)
-
-    _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64)], [128, 250])
-    run_dirs.append(rd)
-
-    _, _, rd = train_CNN(32, 40, 0.001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128])
-    run_dirs.append(rd)
-
-    _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128])
-    run_dirs.append(rd)
-
-    _, _, rd = train_CNN(32, 40, 0.001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128, 250])
-    run_dirs.append(rd)
-
-    _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128, 250])
-    run_dirs.append(rd)
+    # _, _, rd = train_CNN(32, 40,0.001, [("conv", 16), ("conv", 32), ("conv", 64)], [128, 250])
+    # run_dirs.append(rd)
+    #
+    # _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64)], [128, 250])
+    # run_dirs.append(rd)
+    #
+    # _, _, rd = train_CNN(32, 40, 0.001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128])
+    # run_dirs.append(rd)
+    #
+    # _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128])
+    # run_dirs.append(rd)
+    #
+    # _, _, rd = train_CNN(32, 40, 0.001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128, 250])
+    # run_dirs.append(rd)
+    #
+    # _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128, 250])
+    # run_dirs.append(rd)
 
     # (add more runs exactly as you like)
     # _, _, rd = train_CNN(64, 10, [("conv",16),("conv",32),("conv",64),("conv",64)], [128,256]); run_dirs.append(rd)
 
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-    out_dir = os.path.join("models", "comparisons", ts)  # or "comparison" if that's your folder
+    out_dir = out_dir = Path(__file__).resolve().parents[2] / "outputs" / "comparisons" / ts  # or "comparison" if that's your folder
     os.makedirs(out_dir, exist_ok=True)
 
     compare_runs_from_logs(

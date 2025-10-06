@@ -5,140 +5,144 @@ from src.model.plot import *
 from src.model.training.run_dirs import *
 import copy
 
-def train_model_val_loss(model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate, layers=None, conv_config=None, fc_config=None):
+def train_model_val_loss(model, dataloaders, criterion, optimizer,
+                         num_epochs, batch_size, learning_rate, layers=None,
+                         conv_config=None, fc_config=None):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
     model.to(device)
 
-    # === NEW: create this run's folders ===
     run_dir, figs_dir, run_id, arch_name = start_run(
         model, num_epochs, learning_rate, batch_size, layers,
         extra_info={"conv_config": conv_config, "fc_config": fc_config}
     )
-    epoch_losses = []
-    val_losses = []
-
-    best_model_wts = copy.deepcopy(model.state_dict())
-    best_val_loss = float('inf')
+    print("using device:", device)
+    epoch_losses, val_losses = [], []
+    best_wts = copy.deepcopy(model.state_dict())
+    best_val = float("inf")
 
     for epoch in range(num_epochs):
-        # === Training Phase ===
+        # train
         model.train()
-        running_loss = 0.0
-        for inputs, labels in dataloaders['train']:
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-
+        running = 0.0
+        for x, y in dataloaders['train']:
+            x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
+            pred = model(x)
+            loss = criterion(pred, y)
             loss.backward()
             optimizer.step()
-
-            running_loss += loss.item()
-
-        epoch_loss = running_loss / len(dataloaders['train'])
+            running += loss.item()
+        epoch_loss = running / len(dataloaders['train'])
         epoch_losses.append(epoch_loss)
 
-        # === Validation Phase ===
+        # val
         model.eval()
-        val_loss = 0.0
+        v = 0.0
         with torch.no_grad():
-            for inputs, labels in dataloaders.get('val', []):
-                inputs = inputs.to(device)
-                labels = labels.to(device)
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                val_loss += loss.item()
-        val_loss /= max(1, len(dataloaders.get('val', [])))
-        val_losses.append(val_loss)
+            for x, y in dataloaders.get('val', []):
+                x, y = x.to(device), y.to(device)
+                v += criterion(model(x), y).item()
+        v /= max(1, len(dataloaders.get('val', [])))
+        val_losses.append(v)
 
-        print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}")
+        if v < best_val:
+            best_val = v
+            best_wts = copy.deepcopy(model.state_dict())
+        current_lr = optimizer.param_groups[0]["lr"]
+        print(f"[{epoch + 1}/{num_epochs}] "
+              f"train={epoch_loss:.6f}  val={v:.6f}  lr={current_lr:.2e}", flush=True)
 
-        # Save best weights
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            best_model_wts = copy.deepcopy(model.state_dict())
+    # save best to this run
+    ckpt = os.path.join(run_dir, f"{arch_name}_e{num_epochs}_lr{learning_rate}_bs{batch_size}_val{best_val:.3f}.pt")
+    torch.save(best_wts, ckpt)
 
-    print(f"Finished Training. Final Val Loss: {best_val_loss:.4f}")
-
-    # === CHANGED: save best model inside this run's folder (informative name) ===
-    model_filename = f"SimpleNN_e{num_epochs}_lr{learning_rate}_bs{batch_size}_val{best_val_loss:.3f}.pt"
-    model_save_path = os.path.join(run_dir, model_filename)
-    torch.save(best_model_wts, model_save_path)
-    print(f"Model saved to {model_save_path}")
-
-    # Also save a simple combined loss plot using your existing function
-    # (we pass figs_dir so it lands in this run's folder)
+    # per-run combined plot → run_dir/figs/
     plot_loss_graphs(epoch_losses, val_losses, run_number=1, num_epochs=num_epochs,
-                     learning_rate=learning_rate, batch_size=batch_size, layers=layers, filename=figs_dir)
+                     learning_rate=learning_rate, batch_size=batch_size,
+                     layers=layers, out_dir=figs_dir)
 
-    # And log a small per-run text file
+    # per-run log → run_dir/run_log.txt
     run_log_path = os.path.join(run_dir, "run_log.txt")
     log_run_details(num_epochs, learning_rate, batch_size, layers,
-                    best_val_loss, device, epoch_losses,
-                    val_losses=val_losses,
+                    final_loss=best_val, device=device,
+                    epoch_losses=epoch_losses, val_losses=val_losses,
                     run_log_path=run_log_path, figs_dir=figs_dir)
+
 
     return epoch_losses, val_losses, run_dir
 
 
-def train_autoencoder(model, dataloaders, criterion, optimizer, num_epochs, batch_size, learning_rate, layers=None):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
-    model.to(device)
 
-    # === NEW: create this run's folders ===
-    if layers is None:
-        layers = ["AE", "AE", "AE"]  # placeholder to keep the same function signatures
+def train_autoencoder(model, dataloaders, criterion, optimizer,
+                      num_epochs, batch_size, learning_rate, layers=None):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    layers = layers if layers is not None else "AE"
+
+    # (optional banner)
+    if device.type == "cuda":
+        try:
+            name = torch.cuda.get_device_name(torch.cuda.current_device())
+        except Exception:
+            name = "CUDA device"
+        print(f"Using device: {device} ({name})")
+    else:
+        print("Using device: cpu")
 
     run_dir, figs_dir, run_id, arch_name = start_run(
         model, num_epochs, learning_rate, batch_size, layers
     )
-    train_losses = []
-    val_losses = []
+
+    train_losses, val_losses = [], []
 
     for epoch in range(num_epochs):
+        # ---- train ----
         model.train()
-        running_loss = 0.0
-        for inputs, _ in dataloaders['train']:
-            inputs = inputs.to(device)
-
+        running = 0.0
+        for x, _ in dataloaders['train']:
+            x = x.to(device)
             optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, inputs)
+            rec = model(x)
+            loss = criterion(rec, x)
             loss.backward()
             optimizer.step()
+            running += loss.item()
 
-            running_loss += loss.item()
-
-        epoch_train_loss = running_loss / len(dataloaders['train'])
+        epoch_train_loss = running / len(dataloaders['train'])
         train_losses.append(epoch_train_loss)
 
-        # --- Validation loss ---
+        # ---- val ----
         model.eval()
-        val_loss = 0.0
+        v = 0.0
         with torch.no_grad():
-            for inputs, _ in dataloaders['val']:
-                inputs = inputs.to(device)
-                outputs = model(inputs)
-                loss = criterion(outputs, inputs)
-                val_loss += loss.item()
-        epoch_val_loss = val_loss / len(dataloaders['val'])
+            for x, _ in dataloaders['val']:
+                x = x.to(device)
+                v += criterion(model(x), x).item()
+
+        epoch_val_loss = v / len(dataloaders['val'])
         val_losses.append(epoch_val_loss)
 
-        print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {epoch_train_loss:.4f}, Val Loss: {epoch_val_loss:.4f}")
+        current_lr = optimizer.param_groups[0]["lr"]
+        print(f"[{epoch+1}/{num_epochs}] "
+              f"train={epoch_train_loss:.6f}  val={epoch_val_loss:.6f}  lr={current_lr:.2e}",
+              flush=True)
 
-    # --- Save the trained model into this run's folder ---
-    model_path = os.path.join(run_dir, "autoencoder_final.pt")
-    torch.save(model.state_dict(), model_path)
-    print(f"Model saved to {model_path}")
+    # save into this run
+    ckpt = os.path.join(run_dir, "autoencoder_final.pt")
+    torch.save(model.state_dict(), ckpt)
 
-    # Save a quick plot of AE train loss using your old function
+    # per-run combined plot → run_dir/figs/
+    plot_loss_graphs(train_losses, val_losses, run_number=1, num_epochs=num_epochs,
+                     learning_rate=learning_rate, batch_size=batch_size,
+                     layers=layers, out_dir=figs_dir)
+
+    # per-run log → run_dir/run_log.txt
     run_log_path = os.path.join(run_dir, "run_log.txt")
     log_run_details(num_epochs, learning_rate, batch_size, layers,
-                    epoch_val_loss, device, train_losses,
-                    val_losses=val_losses,
+                    final_loss=val_losses[-1], device=device,
+                    epoch_losses=train_losses, val_losses=val_losses,
                     run_log_path=run_log_path, figs_dir=figs_dir)
 
     return train_losses, val_losses, run_dir
+
+
