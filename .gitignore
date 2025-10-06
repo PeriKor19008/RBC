@@ -1,13 +1,14 @@
 Data/results
 documentation/
 src/model/models_SimpleNN/
-outputs
+
 # Python cache/compiled files
 __pycache__/
-*.pyc
-.idea
+/outputs/
 /src/outputs/
+/src/model/models/
+/src/model/graphs/
+/src/model/plots/
 *.pt
 *.pth
 *.onnx
-src.zip
