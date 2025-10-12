@@ -24,7 +24,7 @@ def plot_all_val_losses(all_val_losses, out_dir, filename="all_val_losses.png"):
     plt.close()
     print(f"Saved: {path}")
 
-def plot_loss_graphs(train_losses, val_losses, run_number, num_epochs, learning_rate, batch_size, layers, out_dir):
+def plot_loss_graphs(train_losses, val_losses, run_number, num_epochs, learning_rate, batch_size, layers, out_dir,lr_tag):
     """
     Per-run: train + val loss. REQUIRED: out_dir (usually the run's figs/).
     """
@@ -40,15 +40,15 @@ def plot_loss_graphs(train_losses, val_losses, run_number, num_epochs, learning_
     plt.title('Training and Validation Loss over Epochs')
     plt.legend(loc="upper right")
     plt.grid(True)
-
-    text = f"Epochs: {num_epochs}\nLR: {learning_rate}\nBatch Size: {batch_size}\nLayers: {layers}"
+    lr_line = f"{learning_rate}" + (f" ({lr_tag})" if lr_tag else "")
+    text = f"Epochs: {num_epochs}\nLR: {lr_line}\nBatch Size: {batch_size}\nLayers: {layers}"
     plt.text(0.95, 0.95, text, ha='right', va='top', transform=plt.gca().transAxes,
              fontsize=10, bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=1'))
 
     plt.savefig(os.path.join(out_dir, f'loss_graph_run{run_number}.png'))
     plt.close()
 
-def plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate, batch_size, layers, out_dir):
+def plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate, batch_size, layers, out_dir, lr_tag):
     """
     Per-run: train-only loss. REQUIRED: out_dir (run's figs/).
     """
@@ -62,7 +62,8 @@ def plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate
     plt.grid(True)
     plt.legend(loc="upper right")
 
-    text = f"Epochs: {num_epochs}\nLR: {learning_rate}\nBatch Size: {batch_size}\nLayers: {layers}"
+    lr_line = f"Learning Rate: {learning_rate}"+ (f"({lr_tag})" if lr_tag else "")
+    text = f"Epochs: {num_epochs}\nLR: {lr_line}\nBatch Size: {batch_size}\nLayers: {layers}"
     plt.text(0.95, 0.95, text, ha='right', va='top', transform=plt.gca().transAxes,
              fontsize=10, bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=1'))
 

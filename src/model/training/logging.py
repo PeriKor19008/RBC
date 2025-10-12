@@ -6,12 +6,17 @@ def log_run_details(num_epochs, learning_rate, batch_size, layers,
                     final_loss, device, epoch_losses,  # train losses
                     val_losses=None,                    # <-- NEW (optional)
                     run_log_path='mock_run_observations.txt',
-                    figs_dir='graphs_SimpleNN'):
+                    figs_dir='graphs_SimpleNN',
+                    scheduler_name: str | None = None,
+                    scheduler_params: dict | None = None):
 
     run_number = get_next_run_number(run_log_path) if os.path.exists(run_log_path) else 1
 
     with open(run_log_path, 'a') as f:
         f.write(f"\nrun #{run_number}:\n")
+        if scheduler_name:
+            f.write(f"Scheduler: {scheduler_name} {scheduler_params or {} }\n")
+
         if isinstance(layers, (list, tuple)) and len(layers) >= 3:
             f.write(f"Hidden Layers: {layers[0]} --> {layers[1]} --> {layers[2]}\n")
         else:
@@ -28,10 +33,10 @@ def log_run_details(num_epochs, learning_rate, batch_size, layers,
                 f.write(f"Epoch {i + 1} val: {val_losses[i]:.6f}\n")
         f.write(f"Finished Training and saved the model.\n")
         f.write(f"---------------------------------------------------------\n")
-
+    lr_tag =scheduler_name
     # keep your old plot, saved into this run’s figs/
     plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate,
-                             batch_size, layers, out_dir=figs_dir)
+                             batch_size, layers, out_dir=figs_dir,lr_tag=lr_tag)
 
 
 def get_next_run_number(log_file='mock_run_observations.txt'):

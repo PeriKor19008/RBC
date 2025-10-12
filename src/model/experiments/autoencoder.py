@@ -39,6 +39,14 @@ def run_autoencoder(batchSize, epochs,lr_rate, h_layers=None, latent_dim=None):
         batch_size=batch_size,
         learning_rate=lr_rate,
         layers=label,
+        scheduler_name="onecycle",
+        scheduler_params={
+            "max_lr": lr_rate * 2.0,
+            "pct_start": 0.4,
+            "div_factor": (lr_rate * 2.0) / lr_rate,  # == 2.0
+            "final_div_factor": 1e4,
+            "cycle_momentum": False
+        }
     )
 
     return train_losses, val_losses, run_dir

@@ -4,10 +4,28 @@ from src.model.training.logging import *
 from src.model.plot import *
 from src.model.training.run_dirs import *
 import copy
+from src.model.training.schedulers import build_scheduler, step_scheduler, current_lr
 
 def train_model_val_loss(model, dataloaders, criterion, optimizer,
                          num_epochs, batch_size, learning_rate, layers=None,
-                         conv_config=None, fc_config=None):
+                         conv_config=None, fc_config=None,
+                         scheduler_name: str | None = None, scheduler_params: dict | None = None):
+
+
+    steps_per_epoch = len(dataloaders['train'])
+    scheduler, sched_mode = build_scheduler(
+        optimizer,
+        scheduler_name,
+        num_epochs=num_epochs,
+        steps_per_epoch=steps_per_epoch,
+        base_lr=learning_rate,
+        **(scheduler_params or {})
+    )
+    lr_tag = None
+    if scheduler_name:
+        mx = (scheduler_params or {}).get("max_lr")
+    lr_tag = f"{scheduler_name}, max={mx:.2e}" if mx else scheduler_name
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
@@ -15,7 +33,7 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
         model, num_epochs, learning_rate, batch_size, layers,
         extra_info={"conv_config": conv_config, "fc_config": fc_config}
     )
-    print("using device:", device)
+    print("using device:", device, "and scheduler:", scheduler_name or "none")
     epoch_losses, val_losses = [], []
     best_wts = copy.deepcopy(model.state_dict())
     best_val = float("inf")
@@ -27,10 +45,11 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
         for x, y in dataloaders['train']:
             x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
-            pred = model(x)
-            loss = criterion(pred, y)
+            out = model(x)
+            loss = criterion(out, y)
             loss.backward()
             optimizer.step()
+            step_scheduler(scheduler, sched_mode)
             running += loss.item()
         epoch_loss = running / len(dataloaders['train'])
         epoch_losses.append(epoch_loss)
@@ -44,6 +63,10 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
                 v += criterion(model(x), y).item()
         v /= max(1, len(dataloaders.get('val', [])))
         val_losses.append(v)
+
+        # <- per-epoch schedulers (Cosine, Step, Plateau)
+        if sched_mode in {"epoch", "plateau"}:
+            step_scheduler(scheduler, sched_mode, val_loss=v)
 
         if v < best_val:
             best_val = v
@@ -59,14 +82,14 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
     # per-run combined plot → run_dir/figs/
     plot_loss_graphs(epoch_losses, val_losses, run_number=1, num_epochs=num_epochs,
                      learning_rate=learning_rate, batch_size=batch_size,
-                     layers=layers, out_dir=figs_dir)
+                     layers=layers, out_dir=figs_dir,lr_tag=lr_tag)
 
     # per-run log → run_dir/run_log.txt
     run_log_path = os.path.join(run_dir, "run_log.txt")
     log_run_details(num_epochs, learning_rate, batch_size, layers,
                     final_loss=best_val, device=device,
                     epoch_losses=epoch_losses, val_losses=val_losses,
-                    run_log_path=run_log_path, figs_dir=figs_dir)
+                    run_log_path=run_log_path, figs_dir=figs_dir,scheduler_name=scheduler_name,scheduler_params=scheduler_params)
 
 
     return epoch_losses, val_losses, run_dir
@@ -74,7 +97,23 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
 
 
 def train_autoencoder(model, dataloaders, criterion, optimizer,
-                      num_epochs, batch_size, learning_rate, layers=None):
+                      num_epochs, batch_size, learning_rate, layers=None,
+                      scheduler_name: str | None = None, scheduler_params: dict | None = None):
+
+    steps_per_epoch = len(dataloaders['train'])
+    scheduler, sched_mode = build_scheduler(
+        optimizer,
+        scheduler_name,
+        num_epochs=num_epochs,
+        steps_per_epoch=steps_per_epoch,
+        base_lr=learning_rate,
+        **(scheduler_params or {})
+    )
+    lr_tag = None
+    if scheduler_name:
+            mx = (scheduler_params or {}).get("max_lr")
+            lr_tag = f"{scheduler_name}, max={mx:.2e}" if mx else scheduler_name
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     layers = layers if layers is not None else "AE"
@@ -106,6 +145,7 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
             loss = criterion(rec, x)
             loss.backward()
             optimizer.step()
+            step_scheduler(scheduler, sched_mode)
             running += loss.item()
 
         epoch_train_loss = running / len(dataloaders['train'])
@@ -121,6 +161,8 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
 
         epoch_val_loss = v / len(dataloaders['val'])
         val_losses.append(epoch_val_loss)
+        if sched_mode in {"epoch", "plateau"}:
+            step_scheduler(scheduler, sched_mode, val_loss=epoch_val_loss)
 
         current_lr = optimizer.param_groups[0]["lr"]
         print(f"[{epoch+1}/{num_epochs}] "
@@ -134,14 +176,14 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
     # per-run combined plot → run_dir/figs/
     plot_loss_graphs(train_losses, val_losses, run_number=1, num_epochs=num_epochs,
                      learning_rate=learning_rate, batch_size=batch_size,
-                     layers=layers, out_dir=figs_dir)
+                     layers=layers, out_dir=figs_dir,lr_tag=lr_tag)
 
     # per-run log → run_dir/run_log.txt
     run_log_path = os.path.join(run_dir, "run_log.txt")
     log_run_details(num_epochs, learning_rate, batch_size, layers,
                     final_loss=val_losses[-1], device=device,
                     epoch_losses=train_losses, val_losses=val_losses,
-                    run_log_path=run_log_path, figs_dir=figs_dir)
+                    run_log_path=run_log_path, figs_dir=figs_dir,scheduler_name=scheduler_name,scheduler_params=scheduler_params)
 
     return train_losses, val_losses, run_dir
 

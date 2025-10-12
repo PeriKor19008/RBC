@@ -50,8 +50,16 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None):
         batch_size=batchSize,
         learning_rate=learning_rate,
         layers=label,
-        conv_config=conv_config,  # <--- NEW
-        fc_config=fc_config  # <--- NEW
+        conv_config=conv_config,
+        fc_config=fc_config,
+        scheduler_name="onecycle",
+        scheduler_params={
+            "max_lr": learning_rate * 5.0,  # or x10
+            "pct_start": 0.3,
+            "div_factor": (learning_rate * 5.0) / learning_rate,  # == 5.0
+            "final_div_factor": 1e4,
+            "cycle_momentum": False
+        }
     )
 
     run_number = get_next_run_number()
