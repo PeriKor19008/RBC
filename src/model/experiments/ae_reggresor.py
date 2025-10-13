@@ -23,12 +23,12 @@ def train_ae_regressor_head():
 
 
 #create regressor from trained AE
-    AE_CKPT = "outputs/models/FCAutoencoder/sched_20251012-153447_FCAutoencoder_e50_lr0.0001_bs32_wd0.0_seed42_dsmanual/autoencoder_final.pt"  # path to trained model
+    AE_CKPT = "../../outputs/models/FCAutoencoder/sched_20251012-153447_FCAutoencoder_e50_lr0.0001_bs32_wd0.0_seed42_dsmanual/autoencoder_final.pt"  # path to trained model
 
     reg = AERegressor.from_checkpoint(
         ae_builder=FCAutoencoder,
         ckpt_path=AE_CKPT,
-        ae_kwargs={"latent_dim": 64, "hidden_dims": [1024, 512, 128]},  # use the dims you trained with
+        ae_kwargs={"latent_dim": 64, "hidden_dims": [1024, 512, 128]},  # use the dims you trained with check .json of the model
         latent_dim=64,                         # same latent as AE
         head_hidden=(128, 64),                 # tiny MLP head
         freeze_encoder=True,                   # freeze AE encoder
@@ -47,7 +47,7 @@ def train_ae_regressor_head():
         dataloaders=dls,
         criterion=criterion,
         optimizer=optimizer,
-        num_epochs=40,
+        num_epochs=50,
         batch_size=BATCH,
         learning_rate=1e-3,
         layers="AE64_head128x64_frozen",      # will appear in your logs/figs
@@ -59,7 +59,7 @@ def train_ae_regressor_head():
         },
     )
 
-    torch.save(reg.state_dict(), os.path.join(run_dir, "ae_regressor.pt"))
+
 
 
 #fine tune encoder
@@ -79,4 +79,6 @@ def train_ae_regressor_head():
         layers="AE64_head128x64_ft-last1",
     )
 
+# save model
+    torch.save(reg.state_dict(), os.path.join(run_dir, "ae_regressor_full.pt"))
 

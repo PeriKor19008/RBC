@@ -24,7 +24,11 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
     lr_tag = None
     if scheduler_name:
         mx = (scheduler_params or {}).get("max_lr")
-    lr_tag = f"{scheduler_name}, max={mx:.2e}" if mx else scheduler_name
+    if scheduler_name:
+        mx = (scheduler_params or {}).get("max_lr", None)
+        lr_tag = f"{scheduler_name}, max={mx:.2e}" if mx is not None else str(scheduler_name)
+    else:
+        lr_tag = None
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)

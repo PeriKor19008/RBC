@@ -1,6 +1,7 @@
-
+from src.model.experiments.ae_reggresor import train_ae_regressor_head
 from src.model.experiments.cnn import train_CNN, multi_train_CNN
 from src.model.experiments.autoencoder import run_autoencoder, multi_train_autoencoder
+from experiments.autoencoder import *
 
 
 def train_single_model():
@@ -10,7 +11,7 @@ def train_single_model():
 
 
 if __name__ == "__main__":
-    train_single_model()
+    #train_single_model()
     #multi_train_CNN()
-
+    train_ae_regressor_head()
 
