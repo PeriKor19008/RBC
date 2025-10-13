@@ -1,11 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from fontTools.unicodedata import block
-
+import torch
+from torch import nn
+from src.model.noise import *
 from Data.DB_setup.image_db_utils import ImageDB
 
 
-def display_image(image_data, use_log=True):
+def display_image(image_data, use_log=True,noise:bool=False):
     if not image_data:
         print(" No image data found.")
         return
@@ -17,7 +19,14 @@ def display_image(image_data, use_log=True):
         raise ValueError("Expected 2500 values")
 
     image_array = np.array(values).reshape((50, 50))
-
+    if noise:
+        x = torch.from_numpy(image_array).unsqueeze(0)
+        train_tf = nn.Sequential(
+            AddGaussianNoise(std=0.02, p=0.7),
+            AddSpeckleNoise(std=0.02, p=0.5),
+        )
+        noise = train_tf(x)
+        image_array = noise.squeeze().numpy()
     #  Print filename and filepath
     print(f" Filename: {image_data['filename']}")
     print(f" Filepath: {image_data['filepath']}")
@@ -56,6 +65,7 @@ if __name__ == '__main__':
     image = db.search_image_by_dtr(7000,2250,600)
     db.close()
 
-    plot_image_as_line(image, use_log=True)
-    display_image(image,use_log=True)
+    #plot_image_as_line(image, use_log=True)
+    display_image(image,use_log=True,noise=False)
+    display_image(image,use_log=True,noise=True)
     plt.show()
