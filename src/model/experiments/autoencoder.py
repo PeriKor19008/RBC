@@ -6,11 +6,11 @@ from src.model.model import FCAutoencoder
 from src.model.training.loops import train_autoencoder
 from datetime import datetime
 from src.model.training.run_dirs import *
+from src.model.noise import *
 
 
 
-
-def run_autoencoder(batchSize, epochs,lr_rate, h_layers=None, latent_dim=None):
+def run_autoencoder(batchSize, epochs,lr_rate, h_layers=None, latent_dim=None, noise:bool = False):
     full_dataset = RBCDatasetDB(db_config=DB_CONFIG, use_log_image=False)
     if h_layers is None:
         h_layers = [1024, 512, 128]
@@ -23,7 +23,15 @@ def run_autoencoder(batchSize, epochs,lr_rate, h_layers=None, latent_dim=None):
 
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
-    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
+    train_ds, val_dataset = random_split(full_dataset, [train_size, val_size])
+    train_dataset = train_ds
+    if noise:
+        train_tf = nn.Sequential(
+            AddGaussianNoise(std=0.02, p=0.7),
+            AddSpeckleNoise(std=0.02, p=0.5),
+        )
+        train_dataset = WithTransform(train_ds, transform=train_tf)
+
     dataloaders = {
         'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True),
         'val': DataLoader(val_dataset, batch_size=batch_size, shuffle=False)

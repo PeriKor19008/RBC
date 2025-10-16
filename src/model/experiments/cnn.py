@@ -19,14 +19,14 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
     train_ds, val_dataset = random_split(full_dataset, [train_size, val_size])
-
+    train_dataset = train_ds
     if noise:
         train_tf = nn.Sequential(
             AddGaussianNoise(std=0.02, p=0.7),
             AddSpeckleNoise(std=0.02, p=0.5),
         )
         train_dataset = WithTransform(train_ds,transform=train_tf)
-    train_dataset=train_ds
+
     # -----create dataloader----
     batch_size = batchSize
     dataloaders = {
