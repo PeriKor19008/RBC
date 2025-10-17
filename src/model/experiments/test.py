@@ -14,6 +14,10 @@ import re
 import os
 import matplotlib.pyplot as plt
 from src.model.noise import *
+from src.model.RBCDataset import RBCDatasetDB
+from Data.DB_setup.db_config import DB_CONFIG
+from torch.utils.data import DataLoader, random_split
+
 
 LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
 
@@ -112,6 +116,8 @@ def load_ae_regressor(ckpt_path: str | Path, device: str = "auto") -> AERegresso
         print(f"[load_ae_regressor] non-strict load: missing={missing}, unexpected={unexpected}")
 
     return reg.to(dev).eval()
+
+
 
 
 def _infer_ref_index_from_path(p: Path) -> float:
@@ -328,19 +334,10 @@ if __name__ == "__main__":
 
     # 1) load the full model (no builder/arch needed)
     #model= load_cnn_model("../../../outputs/models/FlexibleCNN/noise_20251013-214759_FlexibleCNN_e50_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e50_lr0.001_bs32_val374.415.pt")
-    model = load_ae_regressor("../../../outputs/models/AERegressor/20251013-003104_AERegressor_e10_lr0.001_bs32_wd0.0_seed42_dsmanual/AERegressor_e10_lr0.001_bs32_val93145.376.pt")
+    model = load_ae_regressor("../../../outputs/models/FCAutoencoder/sched_20251012-153447_FCAutoencoder_e50_lr0.0001_bs32_wd0.0_seed42_dsmanual/20251013-001746_AERegressor_e50_lr0.001_bs32_wd0.0_seed42_dsmanual/ae_regressor_full.pt")
 
 
     # 2) load one RBC text image + labels (no normalization)
     res = predict_and_compare(model, "../../../Data/results/Refindx1.055/0450015005001a.f06",False)
     plot_bar_pred_vs_true_single(res, title="Predicted vs True for 0450015005001a.f06",show=True)
 
-    # x, y_true = load_rbc_txt_image_and_labels("../../../Data/results/Refindx1.055/0450015005001a.f06")  # x: [1,50,50]
-    #
-    # # 3) predict
-    # x = x.unsqueeze(0).to(device)  # -> [1,1,50,50]
-    # with torch.no_grad():
-    #     y_pred = model(x).squeeze(0).cpu()  # [4]
-    #
-    # print("pred:", y_pred.tolist())
-    # print("true:", y_true.tolist())
