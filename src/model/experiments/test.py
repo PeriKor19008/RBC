@@ -65,60 +65,6 @@ def load_cnn_model(ckpt_path: str | Path, device: str = "auto") -> nn.Module:
     return model.to(dev).eval()
 
 # ---------- 2) AE-Regressor loader ----------
-def load_ae_regressor(ckpt_path: str | Path, device: str = "auto") -> AERegressor:
-    """
-    Load an AERegressor checkpoint (full module or state_dict).
-    When loading a state_dict, this uses config.json in the same folder to rebuild:
-      {
-        "ae_kwargs": {"latent_dim": 64, "hidden_dims": [1024,512,128]},
-        "latent_dim": 64,
-        "head_hidden": [128, 64],
-        "num_outputs": 4
-      }
-    """
-    ckpt_path = Path(ckpt_path).resolve()
-    if not ckpt_path.exists():
-        raise FileNotFoundError(ckpt_path)
-
-    dev = _pick_device(device)
-    obj = torch.load(ckpt_path, map_location="cpu")
-
-    # Full module saved? Return directly.
-    if isinstance(obj, nn.Module):
-        return obj.to(dev).eval()  # should already be AERegressor
-
-    # Rebuild from config.json + state_dict
-    cfg_path = ckpt_path.parent / "config.json"
-    if not cfg_path.exists():
-        raise FileNotFoundError(f"Missing config.json next to {ckpt_path}")
-
-    cfg = json.loads(cfg_path.read_text())
-
-    ae_kwargs   = cfg.get("ae_kwargs") or {}
-    latent_dim  = int(cfg.get("latent_dim", ae_kwargs.get("latent_dim", 64)))
-    head_hidden = tuple(int(x) for x in cfg.get("head_hidden", [128]))
-    num_outputs = int(cfg.get("num_outputs", 4))
-
-    # Build encoder from the same AE architecture you trained
-    ae = FCAutoencoder(**ae_kwargs)  # we only need its .encoder
-    reg = AERegressor(
-        encoder=ae.encoder,
-        latent_dim=latent_dim,
-        head_hidden=head_hidden,
-        num_outputs=num_outputs,
-        freeze_encoder=False,   # will be set by loaded weights
-        flatten_input=True,
-    )
-
-    state_dict = obj.get("model_state", obj) if isinstance(obj, dict) else obj
-    missing, unexpected = reg.load_state_dict(state_dict, strict=False)
-    if missing or unexpected:
-        print(f"[load_ae_regressor] non-strict load: missing={missing}, unexpected={unexpected}")
-
-    return reg.to(dev).eval()
-
-
-
 
 def _infer_ref_index_from_path(p: Path) -> float:
     """
@@ -332,10 +278,10 @@ def plot_bar_pred_vs_true_single(
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    path = "../../../outputs/models/FCAutoencoder/sched_20251012-153447_FCAutoencoder_e50_lr0.0001_bs32_wd0.0_seed42_dsmanual/20251017-071313_AERegressor_e50_lr0.001_bs32_wd0.0_seed42_dsmanual/ae_regressor_full.pt"
     # 1) load the full model (no builder/arch needed)
     #model= load_cnn_model("../../../outputs/models/FlexibleCNN/noise_20251013-214759_FlexibleCNN_e50_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e50_lr0.001_bs32_val374.415.pt")
-    model = load_ae_regressor("../../../outputs/models/FCAutoencoder/sched_20251012-153447_FCAutoencoder_e50_lr0.0001_bs32_wd0.0_seed42_dsmanual/20251013-001746_AERegressor_e50_lr0.001_bs32_wd0.0_seed42_dsmanual/ae_regressor_full.pt")
-
+    model = torch.load(path, map_location="cpu",weights_only=False).to(device).eval()  # <— full module
 
     # 2) load one RBC text image + labels (no normalization)
     res = predict_and_compare(model, "../../../Data/results/Refindx1.055/0450015005001a.f06",False)

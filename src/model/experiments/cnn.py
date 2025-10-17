@@ -70,13 +70,7 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
         }
     )
 
-    run_number = get_next_run_number()
-    # plot_loss_graphs(train_losses, val_losses, run_number, num_epochs,
-    #                  learning_rate, batch_size, label)
 
-    # if you still want the combined “all val” plot with a dict:
-    all_val_losses = {label: val_losses}
-    #plot_all_val_losses(all_val_losses)
 
     return train_losses, val_losses, run_dir
 

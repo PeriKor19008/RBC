@@ -80,5 +80,5 @@ def train_ae_regressor_head():
     )
 
 # save model
-    torch.save(reg.state_dict(), os.path.join(run_dir, "ae_regressor_full.pt"))
+    torch.save(reg, os.path.join(run_dir, "ae_regressor_full.pt"))
 

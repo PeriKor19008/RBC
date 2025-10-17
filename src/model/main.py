@@ -11,7 +11,7 @@ def train_single_model():
 
 
 if __name__ == "__main__":
-    train_single_model()
+    #train_single_model()
     #multi_train_CNN()
-    #train_ae_regressor_head()
+    train_ae_regressor_head()
 
