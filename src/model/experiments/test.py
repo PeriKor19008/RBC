@@ -53,7 +53,7 @@ def load_cnn_model(ckpt_path: str | Path, device: str = "auto") -> nn.Module:
 
     cfg = json.loads(cfg_path.read_text())
     # handle list/tuple forms like [["conv",16], ...]
-    conv_cfg_raw = cfg.get("conv_config", [("conv", 16), ("conv", 32), ("conv", 64)])
+    conv_cfg_raw = cfg.get("conv_config", [("conv", 4),("conv", 8),("conv", 16), ("conv", 32), ("conv", 64),("conv", 120)])
     fc_cfg_raw   = cfg.get("fc_config", [128])
 
     conv_cfg: List[Tuple[str, int]] = [tuple(x) for x in conv_cfg_raw]
@@ -66,7 +66,7 @@ def load_cnn_model(ckpt_path: str | Path, device: str = "auto") -> nn.Module:
 
 # ---------- 2) AE-Regressor loader ----------
 
-def _infer_ref_index_from_path(p: Path) -> float:
+def legacy_infer_ref_index_from_path(p: Path) -> float:
     """
     Find a directory segment like 'Refindx1.055' (case-insensitive) and return
     1000*(value-1), e.g. 1.055 -> 55, 1.100 -> 100. Supports '1.055' or '1_055'.
@@ -97,6 +97,125 @@ def _infer_ref_index_from_path(p: Path) -> float:
 
     raise ValueError(f"Could not infer ref_index from path: {p}")
 
+def _strip_leading_id_prefix(filename: str) -> str:
+    """
+    If the filename starts with '<ID>_' where ID is 1..20 (optionally zero-padded),
+    strip the prefix; otherwise return the filename unchanged.
+    Keeps the extension.
+    """
+    name = Path(filename).name  # ensure just the name + extension
+    return re.sub(r"^(?:0?[1-9]|1\d|20)_", "", name)
+
+
+
+
+
+def _infer_ref_index_from_path(p: Path) -> float:
+    """
+    Drop-in replacement.
+
+    NEW: If a text mapping file (ref_index_map.txt / refindex_map.txt / ri_map.txt)
+    exists in the image's directory or any parent, use it to map the sample ID
+    from the filename 'ID_*.f06' (ID: 1–2 digits) to the ref_index *label*.
+
+    Mapping file format (flexible; header/comments allowed, comma/whitespace separated):
+        # id   n       ref_index
+        01     1.077   77
+        02     1.012   12
+        ...
+    - If only 'id  n' is provided, compute label as round((n-1)*1000).
+    - If second column looks >2, it's treated as the label directly.
+
+    LEGACY FALLBACK: If no mapping file is found, scan path segments like
+    'Refindx1.055' and return round((1.055-1)*1000) -> 55.
+    """
+    p = Path(p).resolve()
+
+    # 1) Try mapping file near the image
+    names = ("ref_index_map.txt", "refindex_map.txt", "ri_map.txt")
+    map_file: Optional[Path] = None
+    for d in [p.parent] + list(p.parents):
+        for n in names:
+            cand = d / n
+            if cand.exists() and cand.is_file():
+                map_file = cand
+                break
+        if map_file:
+            break
+
+    if map_file:
+        # parse ID from filename: '01_payload.f06' or '1_payload.f06'
+        m = re.match(r"^(?P<id>\d{1,2})_", p.stem)
+        if not m:
+            raise ValueError(f"Filename must start with '<ID>_': {p.name}")
+        sid = int(m.group("id"))
+
+        # build id->ref_index label map
+        mapping: Dict[int, float] = {}
+        for ln in map_file.read_text(encoding="utf-8").splitlines():
+            line = ln.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = re.split(r"[,\s]+", line)
+            if not parts:
+                continue
+            # skip header rows
+            if parts[0].lower() in {"id"}:
+                continue
+            try:
+                row_id = int(parts[0])
+            except Exception:
+                continue
+            if len(parts) < 2:
+                continue
+            v1 = parts[1]
+            v2 = parts[2] if len(parts) >= 3 else None
+
+            def to_f(s: str) -> float:
+                return float(s.replace("_", "."))
+
+            try:
+                if v2 is not None:
+                    # third column explicitly the label
+                    mapping[row_id] = float(to_f(v2))
+                else:
+                    # single value: interpret as 'n' if <=2, else already a label
+                    val = to_f(v1)
+                    if 0.0 <= val <= 2.0:
+                        ri = round((val - 1.0) * 1000)
+                        mapping[row_id] = float(int(ri))
+                    else:
+                        mapping[row_id] = float(val)
+            except Exception:
+                continue
+
+        if sid in mapping:
+            return float(mapping[sid])
+        raise KeyError(f"ID {sid} not found in mapping: {map_file}")
+
+    # 2) Legacy fallback: scan path e.g. 'Refindx1.055' -> 55
+    pattern = re.compile(r"(?i)ref(?:ind(?:x|ex)?)?\s*([0-9]+(?:[._][0-9]+)?)")
+    for part in p.parts:
+        m = pattern.search(part)
+        if m:
+            s = m.group(1).replace("_", ".")
+            try:
+                v = float(s)
+                return float(int(round((v - 1.0) * 1000)))
+            except ValueError:
+                pass
+    for parent in p.parents:
+        m = pattern.search(parent.name)
+        if m:
+            s = m.group(1).replace("_", ".")
+            try:
+                v = float(s)
+                return float(int(round((v - 1.0) * 1000)))
+            except ValueError:
+                pass
+
+    raise ValueError(f"Could not infer ref_index for: {p}")
+
 
 def load_rbc_txt_image_and_labels(
     image_path: str | Path,
@@ -119,7 +238,8 @@ def load_rbc_txt_image_and_labels(
     mod = importlib.import_module("src.utils.fileName_to_params")
 
     ref_index = _infer_ref_index_from_path(p)
-    d,t,n_decimal= file_name_to_params(p.name)
+    payload_name = _strip_leading_id_prefix(p.name)
+    d, t, n_decimal = file_name_to_params(payload_name)
     lbl=torch.tensor([d,t,n_decimal,ref_index],dtype=torch.float32)
     if isinstance(lbl, dict):
         try:
@@ -275,15 +395,225 @@ def plot_bar_pred_vs_true_single(
 
     return fig, ax
 
-if __name__ == "__main__":
+
+def test_dir_avg_error(
+    model: nn.Module,
+    dir_path: str | Path,
+    *,
+    denorm: Optional[Dict[str, List[float]]] = None,
+    device: Optional[torch.device] = None,
+    suffixes: Tuple[str, ...] = (".f06", ".txt"),
+    recursive: bool = True,
+    noise: bool = False,
+    title: str | None = None,
+    show: bool = True,
+    save_path: str | None = None,
+    save_path_pct: str | None = None,
+    pct_epsilon: float = 1e-8,
+    close: bool | None = None,   # default: close if not showing
+) -> Tuple[Dict[str, float], Dict[str, float], plt.Figure, plt.Axes, plt.Figure, plt.Axes]:
+    """
+    Evaluate ALL images in `dir_path` and plot:
+      1) Average absolute error per label
+      2) Average absolute *percentage* error per label (|pred-true| / |true| * 100)
+         (skips samples where |true| <= pct_epsilon for that label)
+
+    Uses your existing `predict_and_compare`, which now relies on the UPDATED
+    `_infer_ref_index_from_path` that reads `ref_index_map.txt` (with legacy fallback).
+
+    Returns:
+        avg_abs_err : dict {label -> average absolute error}
+        avg_pct_err : dict {label -> average absolute percentage error (in %)}
+        fig_abs, ax_abs : matplotlib fig/ax for absolute error bars
+        fig_pct, ax_pct : matplotlib fig/ax for percentage error bars
+    """
+    dir_path = Path(dir_path).resolve()
+    if not dir_path.exists():
+        raise FileNotFoundError(f"Directory not found: {dir_path}")
+
+    # collect candidate files
+    suffixes_l = tuple(s.lower() for s in suffixes)
+    it = dir_path.rglob("*") if recursive else dir_path.glob("*")
+    files = [p for p in it if p.is_file() and p.suffix.lower() in suffixes_l]
+    files.sort()
+
+    if not files:
+        raise FileNotFoundError(f"No files with suffix {suffixes} found under: {dir_path}")
+
+    # temporarily suppress blocking plt.show() inside predict_and_compare
+    _orig_show = plt.show
+    plt.show = lambda *args, **kwargs: None  # no-op during the loop
+
+    sums_abs = {k: 0.0 for k in LABEL_KEYS}
+    n_ok = 0
+    # for percentage error we need separate accumulators + counts per label
+    sums_pct = {k: 0.0 for k in LABEL_KEYS}
+    counts_pct = {k: 0 for k in LABEL_KEYS}
+    errors: List[Tuple[Path, str]] = []
+
+    try:
+        for p in files:
+            try:
+                res = predict_and_compare(
+                    model=model,
+                    image_path=str(p),
+                    noise=noise,
+                    denorm=denorm,
+                    device=device,
+                )
+                # accumulate absolute errors
+                for k in LABEL_KEYS:
+                    e = float(res["abs_error"][k])
+                    sums_abs[k] += e
+                    # percentage error if denominator ok
+                    denom = abs(float(res["target"][k]))
+                    if denom > pct_epsilon:
+                        sums_pct[k] += (e / denom) * 100.0
+                        counts_pct[k] += 1
+                n_ok += 1
+            except Exception as e:
+                errors.append((p, str(e)))
+            finally:
+                # ensure any figures created inside predict_and_compare are closed
+                plt.close("all")
+    finally:
+        # restore original show behavior
+        plt.show = _orig_show
+
+    if n_ok == 0:
+        raise RuntimeError(
+            f"All {len(files)} files failed to evaluate. "
+            f"First error: {errors[0][1] if errors else 'unknown'}"
+        )
+
+    # averages
+    avg_abs_err = {k: (sums_abs[k] / n_ok) for k in LABEL_KEYS}
+    avg_pct_err = {
+        k: (sums_pct[k] / counts_pct[k]) if counts_pct[k] > 0 else float("nan")
+        for k in LABEL_KEYS
+    }
+
+    # --- plot 1: absolute error ---
+    x = np.arange(len(LABEL_KEYS))
+    width = 0.6
+
+    fig_abs = plt.figure(figsize=(7.5, 4.5))
+    ax_abs = plt.gca()
+    bars_abs = ax_abs.bar(x, [avg_abs_err[k] for k in LABEL_KEYS], width, label="Avg |Error|")
+
+    ax_abs.set_xticks(x)
+    ax_abs.set_xticklabels(LABEL_KEYS)
+    ax_abs.set_ylabel("Average Absolute Error")
+    ttl_abs = title or "Average Absolute Error"
+    ax_abs.set_title(f"{ttl_abs} across {n_ok} samples\n{dir_path}")
+    ax_abs.grid(axis="y", linestyle="--", alpha=0.4)
+
+    for b in bars_abs:
+        h = b.get_height()
+        ax_abs.annotate(f"{h:.3g}", xy=(b.get_x() + b.get_width() / 2, h),
+                        xytext=(0, 3), textcoords="offset points",
+                        ha="center", va="bottom", fontsize=9)
+
+    fig_abs.tight_layout()
+    if save_path:
+        os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+        fig_abs.savefig(save_path, dpi=150)
+
+    # --- plot 2: percentage error ---
+    fig_pct = plt.figure(figsize=(7.5, 4.5))
+    ax_pct = plt.gca()
+    vals_pct = [avg_pct_err[k] for k in LABEL_KEYS]
+    # For plotting, replace NaN with 0 height but annotate as 'n/a'
+    plot_vals = [0.0 if (isinstance(v, float) and np.isnan(v)) else v for v in vals_pct]
+    bars_pct = ax_pct.bar(x, plot_vals, width, label="Avg |Error| (%)")
+
+    ax_pct.set_xticks(x)
+    ax_pct.set_xticklabels(LABEL_KEYS)
+    ax_pct.set_ylabel("Average Absolute Percentage Error (%)")
+    used_counts = ", ".join([f"{k}:{counts_pct[k]}" for k in LABEL_KEYS])
+    ax_pct.set_title(
+        f"Average Absolute Percentage Error across {n_ok} samples (per-label usable counts: {used_counts})\n{dir_path}"
+    )
+    ax_pct.grid(axis="y", linestyle="--", alpha=0.4)
+
+    for i, b in enumerate(bars_pct):
+        v = vals_pct[i]
+        h = plot_vals[i]
+        label = "n/a" if (isinstance(v, float) and np.isnan(v)) else f"{h:.3g}%"
+        ax_pct.annotate(label, xy=(b.get_x() + b.get_width() / 2, h),
+                        xytext=(0, 3), textcoords="offset points",
+                        ha="center", va="bottom", fontsize=9)
+
+    fig_pct.tight_layout()
+    if save_path_pct:
+        os.makedirs(os.path.dirname(save_path_pct) or ".", exist_ok=True)
+        fig_pct.savefig(save_path_pct, dpi=150)
+
+    if show:
+        plt.show()
+
+    # default behavior: close only if we are NOT showing
+    if close is None:
+        close = not show
+    if close:
+        plt.close(fig_abs)
+        plt.close(fig_pct)
+
+    if errors:
+        print(f"[test_dir_avg_error] Skipped {len(errors)} files due to errors. Showing first 3:")
+        for p, msg in errors[:3]:
+            print(f"  - {p.name}: {msg}")
+
+    return avg_abs_err, avg_pct_err, fig_abs, ax_abs, fig_pct, ax_pct
+
+
+def multi_run():
+    # Choose device for loading the model; "auto" -> cuda if available, else cpu
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    path = "../../../outputs/models/FCAutoencoder/sched_20251012-153447_FCAutoencoder_e50_lr0.0001_bs32_wd0.0_seed42_dsmanual/20251017-071313_AERegressor_e50_lr0.001_bs32_wd0.0_seed42_dsmanual/ae_regressor_full.pt"
+    # Paths (use rel_to_root so you don't need ../../../)
+    ckpt_path = rel_to_root(
+        "outputs/models/FlexibleCNN/20251028-201152_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.006.pt")
+    data_dir = rel_to_root("Data/extra_runs_for_check")
+    out_png = rel_to_root("outputs/test_graphs/extra_runs_avg_abs_error.png")
+    out_pct = rel_to_root("outputs/test_graphs/extra_runs_avg_pct_error.png")  # <- add this
+
+    # Load model and run the directory-level evaluation
+    model = torch.load(ckpt_path, map_location="cpu",weights_only=False).to(device).eval()  # <— full module
+
+
+    avg_abs_err, avg_pct_err, _, _, _, _ = test_dir_avg_error(
+        model=model,
+        dir_path=data_dir,
+        denorm=None,  # or {"mean":[...4], "std":[...4]} if you normalized targets
+        device=None,  # None -> use the model's device
+        noise=False,  # keep False unless you want to add noise during eval
+        title="Avg |error| on extra_runs_for_check",
+        show=True,
+        save_path=str(out_png),
+        save_path_pct=str(out_pct),
+    )
+
+    print("Avg abs error:", avg_abs_err)
+    print("Avg % error:", avg_pct_err)
+
+
+def single_run():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    path = "outputs/models/FlexibleCNN/20251027-210402_FlexibleCNN_e2_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e2_lr0.001_bs32_val16079.430.pt"
     # 1) load the full model (no builder/arch needed)
-    #model= load_cnn_model("../../../outputs/models/FlexibleCNN/noise_20251013-214759_FlexibleCNN_e50_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e50_lr0.001_bs32_val374.415.pt")
+    #model = load_cnn_model("outputs/models/FlexibleCNN/20251027-210402_FlexibleCNN_e2_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e2_lr0.001_bs32_val16079.430.pt")
     model = torch.load(path, map_location="cpu",weights_only=False).to(device).eval()  # <— full module
 
     # 2) load one RBC text image + labels (no normalization)
-    res = predict_and_compare(model, "../../../Data/results/Refindx1.055/0450015005001a.f06",False)
-    plot_bar_pred_vs_true_single(res, title="Predicted vs True for 0450015005001a.f06",show=True)
+    #res = predict_and_compare(model, "../../../Data/results/Refindx1.025/0450015005501a.f06", False)
+    res = predict_and_compare(model, "../../../Data/extra_runs_for_check/05_0362516257251a.f06", False)
+    plot_bar_pred_vs_true_single(res, title="Predicted vs True for 0450015005001a.f06", show=True)
 
+
+
+if __name__ == "__main__":
+    #print (a_infer_ref_index_from_path(Path("../../../Data/extra_runs_for_check/20_0737523754741a.f06")))
+    multi_run()
+    #single_run()

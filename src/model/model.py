@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 
-
 class FCAutoencoder(nn.Module):
     def __init__(self, input_dim=2500, latent_dim=64, hidden_dims=[1024, 512, 128]):
         super(FCAutoencoder, self).__init__()
@@ -39,10 +38,6 @@ class FCAutoencoder(nn.Module):
         return x_recon.view(x.size(0), 1, 50, 50)
 
 
-
-
-
-
 class FlexibleCNN(nn.Module):
     def __init__(self,  conv_config=[("conv", 16), ("conv", 32)], fc_config=[128]):
         super(FlexibleCNN, self).__init__()
@@ -54,16 +49,25 @@ class FlexibleCNN(nn.Module):
         h, w = input_shape[1], input_shape[2]
 
         # === Build convolutional layers ===
+
         for idx, (layer_type, out_channels) in enumerate(conv_config):
-            if layer_type == "conv":
-                conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-                self.conv_layers.add_module(f"conv{idx}", conv)
-                self.conv_layers.add_module(f"relu{idx}", nn.ReLU())
-                self.conv_layers.add_module(f"pool{idx}", nn.MaxPool2d(2))
-                in_channels = out_channels
-                h, w = h // 2, w // 2  # track output size
-            else:
+            if layer_type != "conv":
                 raise ValueError(f"Unsupported conv layer type: {layer_type}")
+
+            # 1) always add the conv + relu
+            self.conv_layers.add_module(
+                f"conv{idx}",
+                nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+            )
+            self.conv_layers.add_module(f"relu{idx}", nn.ReLU(inplace=True))
+
+            # 2) add pooling only for blocks 1..4 (i.e., after the first conv, up to the 5th conv)
+            if 1 <= idx <= 4 and min(h, w) >= 2:
+                self.conv_layers.add_module(f"pool{idx}", nn.MaxPool2d(2))
+                h //= 2
+                w //= 2
+
+            in_channels = out_channels
 
         # === Flatten layer before FC ===
         flat_size = in_channels * h * w
@@ -89,31 +93,7 @@ class FlexibleCNN(nn.Module):
 
 
 
-class SimpleModel(nn.Module):
-    def __init__(self, layers):
-        super(SimpleModel, self).__init__()
 
-        # Define a list to store layers
-        self.layers = nn.ModuleList()
-
-        # Create layers dynamically from the 'layers' argument
-        for i in range(len(layers) - 1):
-            self.layers.append(nn.Linear(layers[i], layers[i + 1]))  # Input to output size
-
-        # Output layer (assuming 3 outputs)
-        self.output_layer = nn.Linear(layers[-1], 4)  # Final output layer to predict 3 values
-
-    def forward(self, x):
-        # Flatten the input image to a 1D vector (for fully connected layers)
-        x = x.view(x.size(0), -1)  # Flatten the image
-
-        # Forward pass through the hidden layers with ReLU activations
-        for layer in self.layers:
-            x = torch.relu(layer(x))
-
-        # Final output layer
-        x = self.output_layer(x)
-        return x
 
 
 

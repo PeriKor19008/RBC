@@ -6,12 +6,28 @@ from experiments.autoencoder import *
 
 def train_single_model():
     #placeholders
-    #train_CNN(32,50, 0.001,[("conv", 16), ("conv", 32), ("conv", 64)], [128],True)
-    _, _, rd = run_autoencoder(32, 50, 0.0001, [1024, 512, 128], 64,True)
+
+    #best with diferent loss func and weight decay
+    train_CNN(32,25, 0.001,
+              [("conv", 4),("conv", 8),("conv", 16), ("conv", 32),("conv", 64), ("conv", 120),("conv", 240)], [128],True)
+
+    train_CNN(32, 25, 0.001,
+              [("conv", 4), ("conv", 8), ("conv", 16), ("conv", 32), ("conv", 64), ("conv", 120), ("conv", 128)], [128],
+              True)
+    train_CNN(32, 25, 0.0009,
+              [("conv", 4), ("conv", 8), ("conv", 16), ("conv", 32), ("conv", 64), ("conv", 120), ("conv", 128)], [128],
+              True)
+
+
+
+
+
+
+    #_, _, rd = run_autoencoder(32, 50, 0.0001, [1024, 512, 128], 64,True)
 
 
 if __name__ == "__main__":
-    #train_single_model()
+    train_single_model()
     #multi_train_CNN()
-    train_ae_regressor_head()
+    #train_ae_regressor_head()
 
