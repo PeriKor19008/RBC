@@ -40,22 +40,10 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
 
     # --- build model, loss, opt ---
     model = FlexibleCNN(conv_config, fc_config)
-    criterion = nn.SmoothL1Loss(beta=1.0)
+    criterion = torch.nn.MSELoss()
     learning_rate = lr_rate
-    decay, no_decay = [], []
-    for name, p in model.named_parameters():
-        if not p.requires_grad:
-            continue
-        if p.ndim == 1 or name.endswith("bias"):
-            no_decay.append(p)  # biases & LayerNorm/BatchNorm weights
-        else:
-            decay.append(p)  # weights to decay
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-    optimizer = optim.AdamW(
-        [{"params": decay, "weight_decay": 1e-4},
-         {"params": no_decay, "weight_decay": 0.0}],
-        lr=learning_rate,
-    )
     num_epochs = epochs
     # make a string label for plots/keys (do NOT use the list itself)
     label = f"conv{len(conv_config)}_fc{len(fc_config)}"
