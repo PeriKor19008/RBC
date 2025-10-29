@@ -66,30 +66,25 @@ class FlexibleCNN(nn.Module):
                 raise ValueError(f"Unsupported conv layer type: {layer_type}")
 
         # === Flatten layer before FC ===
-        self.gap = nn.AdaptiveAvgPool2d(1)  # <- GAP
+
         flat_size = in_channels
 
         # === Build fully connected layers ===
         fc_layers = []
-        fc_in = flat_size
+        fc_in = flat_size * h * w
 
-        self.fc_layers = nn.Sequential(
-            nn.Linear(flat_size, fc_config[0]),
-            nn.ReLU(inplace=True),
 
-        )
-        # for idx, fc_out in enumerate(fc_config):
-        #     fc_layers.append(nn.Linear(fc_in, fc_out))
-        #     fc_layers.append(nn.ReLU())
-        #     fc_in = fc_out
-        #
-        # fc_layers.append(nn.Linear(fc_in, output_dim))  # Final output layer
-        #
-        # self.fc_layers = nn.Sequential(*fc_layers)
+        for idx, fc_out in enumerate(fc_config):
+            fc_layers.append(nn.Linear(fc_in, fc_out))
+            fc_layers.append(nn.ReLU())
+            fc_in = fc_out
+
+        fc_layers.append(nn.Linear(fc_in, output_dim))  # Final output layer
+
+        self.fc_layers = nn.Sequential(*fc_layers)
 
     def forward(self, x):
         x = self.conv_layers(x)
-        x = self.gap(x)
         x = x.view(x.size(0), -1)  # Flatten
         x = self.fc_layers(x)
         return x
