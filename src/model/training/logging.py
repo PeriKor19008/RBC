@@ -1,5 +1,5 @@
 import os
-from src.model.plot import plot_and_save_loss_graph
+from src.model.plot import plot_and_save_loss_graph, plot_lr_graph
 
 
 def log_run_details(num_epochs, learning_rate, batch_size, layers,
@@ -8,7 +8,8 @@ def log_run_details(num_epochs, learning_rate, batch_size, layers,
                     run_log_path='mock_run_observations.txt',
                     figs_dir='graphs_SimpleNN',
                     scheduler_name: str | None = None,
-                    scheduler_params: dict | None = None):
+                    scheduler_params: dict | None = None,
+                    epoch_lrs: list[float] | None = None):
 
     run_number = get_next_run_number(run_log_path) if os.path.exists(run_log_path) else 1
 
@@ -37,6 +38,10 @@ def log_run_details(num_epochs, learning_rate, batch_size, layers,
     # keep your old plot, saved into this run’s figs/
     plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate,
                              batch_size, layers, out_dir=figs_dir,lr_tag=lr_tag)
+
+    if epoch_lrs:
+        plot_lr_graph(epoch_lrs, run_number, num_epochs, learning_rate,
+                      batch_size,layers,out_dir=figs_dir, lr_tag=lr_tag)
 
 
 def get_next_run_number(log_file='mock_run_observations.txt'):

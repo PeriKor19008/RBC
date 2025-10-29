@@ -573,7 +573,7 @@ def multi_run():
 
     # Paths (use rel_to_root so you don't need ../../../)
     ckpt_path = rel_to_root(
-        "outputs/models/FlexibleCNN/3of_round3_BEST_20251028-201152_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.006.pt")
+        "outputs/models/FlexibleCNN/20251028-211002_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.007.pt")
     data_dir = rel_to_root("Data/extra_runs_for_check")
     out_png = rel_to_root("outputs/test_graphs/extra_runs_avg_abs_error.png")
     out_pct = rel_to_root("outputs/test_graphs/extra_runs_avg_pct_error.png")  # <- add this

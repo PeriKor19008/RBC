@@ -39,6 +39,7 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
     )
     print("using device:", device, "and scheduler:", scheduler_name or "none")
     epoch_losses, val_losses = [], []
+    epoch_lr = []
     best_wts = copy.deepcopy(model.state_dict())
     best_val = float("inf")
     y_mean, y_std = _compute_label_stats(dataloaders['train'], device)
@@ -80,17 +81,24 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
         # <- per-epoch schedulers (Cosine, Step, Plateau)
         if sched_mode in {"epoch", "plateau"}:
             step_scheduler(scheduler, sched_mode, val_loss=v)
-
+        current_lr_val = optimizer.param_groups[0]["lr"]
+        epoch_lr.append(current_lr_val)
         if v < best_val:
             best_val = v
             best_wts = copy.deepcopy(model.state_dict())
-        current_lr = optimizer.param_groups[0]["lr"]
+
         print(f"[{epoch + 1}/{num_epochs}] "
-              f"train={epoch_loss:.6f}  val={v:.6f}  lr={current_lr:.2e}", flush=True)
+              f"train={epoch_loss:.6f}  val={v:.6f}  lr={current_lr_val:.2e}", flush=True)
 
     # save best to this run
     ckpt = os.path.join(run_dir, f"{arch_name}_e{num_epochs}_lr{learning_rate}_bs{batch_size}_val{best_val:.3f}.pt")
-    torch.save(best_wts, ckpt)
+    # ensure the module actually contains the best weights before saving it whole
+    model.load_state_dict(best_wts)
+
+    # save a CPU copy of the full module (portable)
+    ckpt = os.path.join(run_dir, f"{arch_name}_e{num_epochs}_lr{learning_rate}_bs{batch_size}_val{best_val:.3f}.pt")
+    model_cpu = copy.deepcopy(model).to("cpu")
+    torch.save(model_cpu, ckpt)
 
     # per-run combined plot → run_dir/figs/
     plot_loss_graphs(epoch_losses, val_losses, run_number=1, num_epochs=num_epochs,
@@ -102,7 +110,7 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
     log_run_details(num_epochs, learning_rate, batch_size, layers,
                     final_loss=best_val, device=device,
                     epoch_losses=epoch_losses, val_losses=val_losses,
-                    run_log_path=run_log_path, figs_dir=figs_dir,scheduler_name=scheduler_name,scheduler_params=scheduler_params)
+                    run_log_path=run_log_path, figs_dir=figs_dir,scheduler_name=scheduler_name,scheduler_params=scheduler_params, epoch_lrs=epoch_lr)
 
 
     return epoch_losses, val_losses, run_dir
@@ -213,5 +221,5 @@ def _compute_label_stats(train_loader, device):
             n  += y.size(0)
     mean = s / n
     var  = (ss / n) - mean**2
-    std  = var.clamp_min(1e-8).sqrt()  # μην αφήσεις std=0
+    std  = var.clamp_min(1e-8).sqrt()
     return mean, std
