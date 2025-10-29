@@ -40,7 +40,7 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
 
     # --- build model, loss, opt ---
     model = FlexibleCNN(conv_config, fc_config)
-    criterion = torch.nn.MSELoss()
+    criterion = nn.SmoothL1Loss(beta=1.0)
     learning_rate = lr_rate
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 

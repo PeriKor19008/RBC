@@ -41,6 +41,10 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
     epoch_losses, val_losses = [], []
     best_wts = copy.deepcopy(model.state_dict())
     best_val = float("inf")
+    y_mean, y_std = _compute_label_stats(dataloaders['train'], device)
+
+    y_mean = y_mean.detach()
+    y_std = y_std.detach()
 
     for epoch in range(num_epochs):
         # train
@@ -50,7 +54,9 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
             x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
             out = model(x)
-            loss = criterion(out, y)
+            y_norm = (y - y_mean) / y_std
+            out_norm = (out - y_mean) / y_std
+            loss = criterion(out_norm, y_norm)
             loss.backward()
             optimizer.step()
             step_scheduler(scheduler, sched_mode)
@@ -64,7 +70,10 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
         with torch.no_grad():
             for x, y in dataloaders.get('val', []):
                 x, y = x.to(device), y.to(device)
-                v += criterion(model(x), y).item()
+                out = model(x)
+                y_norm = (y - y_mean) / y_std
+                out_norm = (out - y_mean) / y_std
+                v += criterion(out_norm, y_norm).item()
         v /= max(1, len(dataloaders.get('val', [])))
         val_losses.append(v)
 
@@ -192,3 +201,17 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
     return train_losses, val_losses, run_dir
 
 
+def _compute_label_stats(train_loader, device):
+    s = torch.zeros(4, device=device)
+    ss = torch.zeros(4, device=device)
+    n = 0
+    with torch.no_grad():
+        for _, y in train_loader:
+            y = y.to(device)
+            s  += y.sum(dim=0)
+            ss += (y ** 2).sum(dim=0)
+            n  += y.size(0)
+    mean = s / n
+    var  = (ss / n) - mean**2
+    std  = var.clamp_min(1e-8).sqrt()  # μην αφήσεις std=0
+    return mean, std
