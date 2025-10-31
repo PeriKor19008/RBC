@@ -97,26 +97,6 @@ def multi_train_CNN():
     _, _, rd = train_CNN(32, 1, 0.0001,[("conv", 16), ("conv", 32), ("conv", 64)], [128])
     run_dirs.append(rd)
 
-    # _, _, rd = train_CNN(32, 40,0.001, [("conv", 16), ("conv", 32), ("conv", 64)], [128, 250])
-    # run_dirs.append(rd)
-    #
-    # _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64)], [128, 250])
-    # run_dirs.append(rd)
-    #
-    # _, _, rd = train_CNN(32, 40, 0.001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128])
-    # run_dirs.append(rd)
-    #
-    # _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128])
-    # run_dirs.append(rd)
-    #
-    # _, _, rd = train_CNN(32, 40, 0.001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128, 250])
-    # run_dirs.append(rd)
-    #
-    # _, _, rd = train_CNN(32, 40, 0.0001, [("conv", 16), ("conv", 32), ("conv", 64), ("conv", 128)], [128, 250])
-    # run_dirs.append(rd)
-
-    # (add more runs exactly as you like)
-    # _, _, rd = train_CNN(64, 10, [("conv",16),("conv",32),("conv",64),("conv",64)], [128,256]); run_dirs.append(rd)
 
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     out_dir = out_dir = Path(__file__).resolve().parents[2] / "outputs" / "comparisons" / ts  # or "comparison" if that's your folder
