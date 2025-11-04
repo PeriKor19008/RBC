@@ -6,8 +6,7 @@ from src.utils.paths import rel_to_root
 from tests_helper import *
 from occlusion import *
 from frequency import *
-
-
+from GradCAM import *
 
 LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
 
@@ -180,12 +179,33 @@ def frequency_test():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     ckpt_path = rel_to_root(
-        "outputs/models/FlexibleCNN/3of_round3_BEST_20251028-201152_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.006.pt")
+        "outputs/models/FlexibleCNN/BEST_old6_20251104-070605_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004462.pt")
     model = torch.load(ckpt_path, map_location="cpu", weights_only=False).to(device).eval()  # <— full module
     data_dir = rel_to_root("Data/extra_runs_good_img")
 
-    test_gaussian_blur_sweep(model,data_dir)
-    #test_unsharp_sweep(model,data_dir)
+    #test_gaussian_blur_sweep(model,data_dir)
+    test_unsharp_sweep(model,data_dir)
+
+
+
+def run_grad_Cam():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    ckpt_path = rel_to_root(
+        "outputs/models/FlexibleCNN/BEST_old6_20251104-070605_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004462.pt")
+    model = torch.load(ckpt_path, map_location="cpu", weights_only=False).to(device).eval()  # <— full module
+    img_path = rel_to_root("Data/res_to_test/06_097761827746a.f06")
+    img, lbl = load_rbc_txt_image_and_labels(img_path)  # img: [1,50,50], lbl_true: [4]
+    img = img.unsqueeze(0).to(device)
+    gradcam = GradCAM(model)
+    k=3
+    cam = gradcam(img,target_index=k)
+
+    plot_grad_cam(cam, img, k)
+
+
+
+
+
 if __name__ == "__main__":
     #print (a_infer_ref_index_from_path(Path("../../../Data/extra_runs_for_check/20_0737523754741a.f06")))
 
@@ -196,9 +216,9 @@ if __name__ == "__main__":
     #     sample_path="Data/extra_runs_good_img",per_label=False,avg=True,
     # )
 
-    cor_multi_run()
-
-    #frequency_test()
+    #cor_multi_run()
+    #run_grad_Cam()
+    frequency_test()
 
 
 
