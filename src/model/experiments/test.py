@@ -1,7 +1,11 @@
 from __future__ import annotations
+
+from sympy.physics.units import frequency
+
 from src.utils.paths import rel_to_root
 from tests_helper import *
-
+from occlusion import *
+from frequency import *
 
 
 
@@ -18,6 +22,7 @@ def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | 
     # accumulators (sum across samples)
     error = torch.zeros(4)
     error_prc = torch.zeros(4)
+    max_prc_err = torch.zeros(4)
     it = 0
 
     for f in dir_path.iterdir():
@@ -45,12 +50,13 @@ def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | 
             # element-wise accumulate
             error = [error[i] + abs_err[i] for i in range(len(abs_err))]
             error_prc = [error_prc[i] + prc_err[i] for i in range(len(prc_err))]
+            max_prc_err = [max(max_prc_err[i], prc_err[i]) for i in range(4)]
             it += 1
     # averages per label
     avg_abs_err = [error[i] / it for i in range(len(error))]
     avg_prc_err = [error_prc[i] / it for i in range(len(error_prc))]
 
-    plot_avg_error_prc(it, avg_prc_err, str(save_path_pct))
+    plot_error_prc(it, avg_prc_err, max_prc_err, str(save_path_pct))
     print("######")
     print(" avg abs error____" + str(avg_abs_err))
     print(" avg pct error----" + str(avg_prc_err))
@@ -59,23 +65,140 @@ def cor_multi_run():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     ckpt_path = rel_to_root(
-        "outputs/models/FlexibleCNN/3of_round3_BEST_20251028-201152_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.006.pt")
+        "outputs/models/FlexibleCNN/20251104-083928_FlexibleCNN_e45_lr0.0008_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e45_lr0.0008_bs32_val0.003675.pt")
     data_dir = rel_to_root("Data/extra_runs_for_check")
-    data_dir_good = rel_to_root("Data/extra_runs_good_img")
+    data_dir_good = rel_to_root("Data/res_to_test")
     out_pct = rel_to_root("outputs/test_graphs/extra_runs_avg_pct_error.png")
     model = torch.load(ckpt_path, map_location="cpu", weights_only=False).to(device).eval()  # <— full module
 
-    test_avg_error(model,data_dir_good,str(out_pct),9900,block=True,jitter=False)
+    test_avg_error(model,data_dir_good,str(out_pct),99,block=False,jitter=False)
     #test_erase(model,data_dir_good,str(out_pct))
 
+
+def run_occlusion_demo(ckpt_path: str, sample_path: str,per_label: bool,avg:bool):
+    # 1) load model
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = torch.load(rel_to_root(ckpt_path),weights_only=False, map_location="cpu").to(device).eval()
+
+    # 2) load one image + labels (no extra normalization here)
+    sample_path = rel_to_root((sample_path))
+    if not avg:
+        img, lbl_true = load_rbc_txt_image_and_labels(sample_path)  # img: [1,50,50], lbl_true: [4]
+
+
+    k = 5
+    stride = 2
+    if per_label and (not avg):
+        heat, base_vec = occlusion_map_per_label(
+            model=model,
+            img=img,
+            lbl_true=lbl_true,
+            k=k,
+            stride=stride,
+            fill="mean",  # neutral occlusion
+            eps=1e-8
+        )
+
+        print("Baseline per-label % error:",
+              {k: float(v) for k, v in zip(LABEL_KEYS, base_vec.tolist())})
+
+
+        plot_occlusion_maps_per_label(
+            img=img,
+            heat=heat,
+            k=k,
+            stride=stride,
+            label_idx=None,  # None -> all labels
+        )
+
+
+
+    elif not per_label and not avg:
+        heat, baseline = occlusion_map_simple(
+            model=model,
+            img=img,
+            lbl_true=lbl_true,
+            k=k,
+            stride=stride,
+            fill="mean",      # neutral occlusion
+            eps=1e-8
+        )
+        print(f"Baseline macro % error (no occlusion): {baseline:.2f}%")
+
+        # 4) plot + (optionally) save
+        plot_occlusion_map_simple(
+            img=img,
+            heat=heat,
+            k=k,
+            stride=stride,
+            title="Occlusion Δ% (macro)",
+
+        )
+    elif per_label and avg:
+        avg_heat, avg_base, n, ref_img = occlusion_map_per_label_avg(
+            model,
+            dir_path=sample_path,
+            k=5,
+            stride=2,
+            fill="mean",  # neutral occlusion
+            eps=1e-8,
+        )
+
+
+
+
+        plot_occlusion_maps_per_label(
+            img=ref_img,
+            heat=avg_heat,
+            k=5,
+            stride=2,
+            label_idx=None,  # None -> show all 4 label maps
+
+        )
+    else:
+        avg_heat, avg_baseline, n, ref_img = occlusion_map_simple_avg(
+            model,
+            dir_path=sample_path,
+            k=k,
+            stride=stride,
+            fill="mean",
+            eps=1e-8,
+        )
+        print(f"Images averaged: {n} | Avg baseline macro %% error: {avg_baseline:.2f}%")
+
+        # 4) plot + save
+        out_png = rel_to_root("outputs/occlusion/avg_occlusion_macro.png")
+        plot_occlusion_map_simple(
+            img=ref_img,
+            heat=avg_heat,
+            k=k,
+            stride=stride,
+            title="Average Occlusion Δ% (macro)",
+        )
+
+def frequency_test():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    ckpt_path = rel_to_root(
+        "outputs/models/FlexibleCNN/3of_round3_BEST_20251028-201152_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.006.pt")
+    model = torch.load(ckpt_path, map_location="cpu", weights_only=False).to(device).eval()  # <— full module
+    data_dir = rel_to_root("Data/extra_runs_good_img")
+
+    test_gaussian_blur_sweep(model,data_dir)
+    #test_unsharp_sweep(model,data_dir)
 if __name__ == "__main__":
     #print (a_infer_ref_index_from_path(Path("../../../Data/extra_runs_for_check/20_0737523754741a.f06")))
-    #multi_run()
-    #single_run()
+
     #print(load_rbc_txt_image_and_labels("../../../Data/extra_runs_for_check/05_0362516257251a.f06"))
 
+    # run_occlusion_demo(
+    #     ckpt_path="outputs/models/FlexibleCNN/3of_round3_BEST_20251028-201152_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.006.pt",
+    #     sample_path="Data/extra_runs_good_img",per_label=False,avg=True,
+    # )
 
     cor_multi_run()
+
+    #frequency_test()
 
 
 

@@ -14,7 +14,7 @@ from src.model.noise import *
 def _strip_leading_id_prefix(filename: str) -> str:
 
     name = Path(filename).name  # ensure just the name + extension
-    return re.sub(r"^(?:0?[1-9]|1\d|20)_", "", name)
+    return re.sub(r"^\d+_", "", name)
 
 
 def _infer_ref_index_from_path(p: Path) -> float:
@@ -183,11 +183,7 @@ def change_block(size, img:Tensor) -> Tensor:
 
 
 def jitter_block(size: int, img: Tensor, strength: float = 0.1) -> Tensor:
-    """
-    Randomly select a size×size block in a [1,50,50] image and make small random changes.
-    - strength: scales the noise (as a fraction of the block's local std). e.g., 0.1 = 10%.
-    - clamp: if True, clamp the modified block to the image's [min, max] range.
-    """
+
     if size < 1:
         raise ValueError("size must be >= 1")
 
@@ -220,9 +216,6 @@ def jitter_block(size: int, img: Tensor, strength: float = 0.1) -> Tensor:
     return out
 
 def show_img(img: torch.Tensor):
-    """
-    Display a [1,50,50] (or [50,50]) tensor as a grayscale image.
-    """
     arr = img.detach().cpu()
     if arr.ndim == 3 and arr.shape[0] == 1:
         arr = arr.squeeze(0)
@@ -247,28 +240,49 @@ def show_img(img: torch.Tensor):
     plt.show()
     plt.close(fig)
 
-def plot_avg_error_prc(iterations,errors: List[float], save_path: str | None = None):
+def plot_error_prc(iterations,errors: List[float],max_errors: List[float], save_path: str | None = None):
     LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
-    vals = [float(v) for v in errors]
+    avg_vals = [float(v) for v in errors]  # CHANGED: renamed for clarity
+
     x = np.arange(len(LABEL_KEYS))
-    width = 0.6
+    width_single = 0.6
+    width_grouped = 0.38  # NEW
 
     fig = plt.figure(figsize=(7.5, 4.5))
     ax = plt.gca()
-    ax.set_ylim(0, max(vals) * 1.15)
-    bars = ax.bar(x, vals, width, label="Avg |Error|")
+
+    if max_errors is None:  # NEW: backwards-compatible single-series plot
+        ax.set_ylim(0, max(avg_vals) * 1.15)
+        bars = ax.bar(x, avg_vals, width_single, label="Avg |Error|")  # CHANGED: uses avg_vals
+        title = f"Average Error Percentage across {iterations} samples"  # NEW
+
+        for b in bars:
+            h = b.get_height()
+            ax.annotate(f"{h:.3g}%", xy=(b.get_x() + b.get_width() / 2, h),
+                        xytext=(0, 3), textcoords="offset points",
+                        ha="center", va="bottom", fontsize=9)
+    else:
+        max_vals = [float(v) for v in max_errors]  # NEW
+        ymax = max(max(avg_vals), max(max_vals)) * 1.15  # NEW
+        ax.set_ylim(0, ymax)  # NEW
+
+        bars_avg = ax.bar(x - width_grouped / 2, avg_vals, width_grouped, label="Avg |Error|")  # NEW
+        bars_max = ax.bar(x + width_grouped / 2, max_vals, width_grouped, label="Max |Error|")  # NEW
+        title = f"Avg & Max Error Percentage across {iterations} samples"  # NEW
+
+        # NEW: annotate both series
+        for b in list(bars_avg) + list(bars_max):
+            h = b.get_height()
+            ax.annotate(f"{h:.3g}%", xy=(b.get_x() + b.get_width() / 2, h),
+                        xytext=(0, 3), textcoords="offset points",
+                        ha="center", va="bottom", fontsize=9)
+        ax.legend()  # NEW
 
     ax.set_xticks(x)
     ax.set_xticklabels(LABEL_KEYS)
-    ax.set_ylabel("Average Error Percentage")
-    ax.set_title(f"Average Error Percentage across {iterations} samples")
+    ax.set_ylabel("Error Percentage")  # CHANGED: covers both avg & max
+    ax.set_title(title)  # CHANGED
     ax.grid(axis="y", linestyle="--", alpha=0.4)
-
-    for b in bars:
-        h = b.get_height()
-        ax.annotate(f"{h:.3g}%", xy=(b.get_x() + b.get_width() / 2, h),
-                    xytext=(0, 3), textcoords="offset points",
-                    ha="center", va="bottom", fontsize=9)
 
     fig.tight_layout()
 

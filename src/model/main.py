@@ -7,11 +7,31 @@ from experiments.autoencoder import *
 def train_single_model():
     #placeholders
 
-    #best with diferent loss func and weight decay
-    train_CNN(32,25, 0.001,
-              [("conv", 4),("conv", 8),("conv", 16), ("conv", 32),("conv", 64), ("conv", 120),("conv", 240)], [128],True)
 
 
+
+    train_CNN(32, 25, 0.005,
+              [("conv", 4), ("conv", 8), ("conv", 16), ("conv", 32), ("conv", 64), ("conv", 120),("conv",240)], [128,250], True)
+
+    train_CNN(32, 25, 0.0008,
+              [("conv", 4), ("conv", 8), ("conv", 16), ("conv", 32), ("conv", 64), ("conv", 120), ("conv", 240)],
+              [128, 250], True)
+
+    train_CNN(32, 35, 0.005,
+              [("conv", 4), ("conv", 8), ("conv", 16), ("conv", 32), ("conv", 64), ("conv", 120), ("conv", 240)],
+              [128, 250], True)
+
+    train_CNN(32, 35, 0.0008,
+              [("conv", 4), ("conv", 8), ("conv", 16), ("conv", 32), ("conv", 64), ("conv", 120), ("conv", 240)],
+              [128, 250], True)
+
+    train_CNN(32, 45, 0.005,
+              [("conv", 4), ("conv", 8), ("conv", 16), ("conv", 32), ("conv", 64), ("conv", 120), ("conv", 240)],
+              [128, 250], True)
+
+    train_CNN(32, 45, 0.0008,
+              [("conv", 4), ("conv", 8), ("conv", 16), ("conv", 32), ("conv", 64), ("conv", 120), ("conv", 240)],
+              [128, 250], True)
 
     #_, _, rd = run_autoencoder(32, 50, 0.0001, [1024, 512, 128], 64,True)
 
