@@ -22,8 +22,8 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
     train_dataset = train_ds
     if noise:
         train_tf = nn.Sequential(
-            AddGaussianNoise(std=0.02, p=0.7),
-            AddSpeckleNoise(std=0.02, p=0.5),
+            AddGaussianNoise(std=0.3, p=0.5),
+            AddSpeckleNoise(std=0.3, p=0.5),
         )
         train_dataset = WithTransform(train_ds,transform=train_tf)
 

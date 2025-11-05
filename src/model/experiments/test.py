@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from sympy.physics.units import frequency
-
+from src.model.noise import *
 from src.utils.paths import rel_to_root
 from tests_helper import *
 from occlusion import *
@@ -11,7 +11,7 @@ from GradCAM import *
 LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
 
 def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | None = None, thresh: float = 15.0,
-                   block:bool = False,jitter:bool = False):
+                   block:bool = False,jitter:bool = False,noise:bool = False):
     dir_path = Path(dir_path).resolve()
     if not dir_path.exists() or not dir_path.is_dir():
         raise FileNotFoundError(f"Directory not found: {dir_path}")
@@ -32,8 +32,14 @@ def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | 
             img = change_block(1,img)
         if jitter:
             img = jitter_block(7,img,5)
-        x = img.unsqueeze(0).to(dev)
 
+        if noise:
+            n = nn.Sequential(
+                AddGaussianNoise(std=0.0, p=0.5),
+                AddSpeckleNoise(std=0.6, p=0.5),
+            )
+            img = n(img)
+        x = img.unsqueeze(0).to(dev)
         with torch.no_grad():
             lbl_pred = model(x).squeeze(0).detach().cpu()
         abs_err = abs(lbl_true - lbl_pred)
@@ -57,20 +63,24 @@ def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | 
 
     plot_error_prc(it, avg_prc_err, max_prc_err, str(save_path_pct))
     print("######")
-    print(" avg abs error____" + str(avg_abs_err))
-    print(" avg pct error----" + str(avg_prc_err))
+    avg_err = 0
+    for i in range(len(avg_prc_err)):
+        avg_err += avg_prc_err[i]
+    avg_err /= len(avg_prc_err)
+    print("avg error------" + str(avg_err))
+    print(" avg per label error----" + str(avg_prc_err))
 
-def cor_multi_run():
+def cor_run():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     ckpt_path = rel_to_root(
-        "outputs/models/FlexibleCNN/20251104-083928_FlexibleCNN_e45_lr0.0008_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e45_lr0.0008_bs32_val0.003675.pt")
+        "outputs/models/FlexibleCNN/noise_BEST_old6_20251105-112939_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004819.pt")
     data_dir = rel_to_root("Data/extra_runs_for_check")
     data_dir_good = rel_to_root("Data/res_to_test")
     out_pct = rel_to_root("outputs/test_graphs/extra_runs_avg_pct_error.png")
     model = torch.load(ckpt_path, map_location="cpu", weights_only=False).to(device).eval()  # <— full module
 
-    test_avg_error(model,data_dir_good,str(out_pct),99,block=False,jitter=False)
+    test_avg_error(model,data_dir_good,str(out_pct),99,block=False,jitter=False,noise=True)
     #test_erase(model,data_dir_good,str(out_pct))
 
 
@@ -137,8 +147,8 @@ def run_occlusion_demo(ckpt_path: str, sample_path: str,per_label: bool,avg:bool
         avg_heat, avg_base, n, ref_img = occlusion_map_per_label_avg(
             model,
             dir_path=sample_path,
-            k=5,
-            stride=2,
+            k=k,
+            stride=stride,
             fill="mean",  # neutral occlusion
             eps=1e-8,
         )
@@ -149,8 +159,8 @@ def run_occlusion_demo(ckpt_path: str, sample_path: str,per_label: bool,avg:bool
         plot_occlusion_maps_per_label(
             img=ref_img,
             heat=avg_heat,
-            k=5,
-            stride=2,
+            k=k,
+            stride=stride,
             label_idx=None,  # None -> show all 4 label maps
 
         )
@@ -186,8 +196,6 @@ def frequency_test():
     #test_gaussian_blur_sweep(model,data_dir)
     test_unsharp_sweep(model,data_dir)
 
-
-
 def run_grad_Cam():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ckpt_path = rel_to_root(
@@ -211,14 +219,17 @@ if __name__ == "__main__":
 
     #print(load_rbc_txt_image_and_labels("../../../Data/extra_runs_for_check/05_0362516257251a.f06"))
 
-    # run_occlusion_demo(
-    #     ckpt_path="outputs/models/FlexibleCNN/3of_round3_BEST_20251028-201152_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.006.pt",
-    #     sample_path="Data/extra_runs_good_img",per_label=False,avg=True,
-    # )
+    run_occlusion_demo(
+        ckpt_path="outputs/models/FlexibleCNN/BEST_old6_20251104-070605_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004462.pt",
+        sample_path="Data/extra_runs_good_img",per_label=False,avg=True,
+    )
 
-    #cor_multi_run()
+    #cor_run()
     #run_grad_Cam()
-    frequency_test()
+    #frequency_test()
+
+
+
 
 
 
