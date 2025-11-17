@@ -10,6 +10,8 @@ import re
 import os
 import matplotlib.pyplot as plt
 from src.model.noise import *
+LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
+
 
 def _strip_leading_id_prefix(filename: str) -> str:
 
@@ -207,7 +209,7 @@ def jitter_block(size: int, img: Tensor, strength: float = 0.1) -> Tensor:
         block = block + noise  # small random change
     # else sigma==0 -> block is constant; leave it as-is
 
-
+    print(sigma)
     low = float(out.min())
     high = float(out.max())
     block = block.clamp(min=low, max=high)
@@ -292,3 +294,64 @@ def plot_error_prc(iterations,errors: List[float],max_errors: List[float], save_
 
     plt.show()
     plt.close(fig)
+
+
+def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | None = None, thresh: float = 15.0,
+                   block:bool = False,jitter:bool = False,noise:bool = False):
+    dir_path = Path(dir_path).resolve()
+    if not dir_path.exists() or not dir_path.is_dir():
+        raise FileNotFoundError(f"Directory not found: {dir_path}")
+    model.eval()
+    dev = next(model.parameters()).device
+
+    # accumulators (sum across samples)
+    error = torch.zeros(4)
+    error_prc = torch.zeros(4)
+    max_prc_err = torch.zeros(4)
+    it = 0
+
+    for f in dir_path.iterdir():
+        if not f.is_file() or f.suffix.lower() != ".f06":
+            continue
+        img, lbl_true = load_rbc_txt_image_and_labels(f)
+        if block:
+            img = change_block(2,img)
+        if jitter:
+            img = jitter_block(5,img,5)
+
+        if noise:
+            n = nn.Sequential(
+                AddGaussianNoise(std=0.0, p=0.5),
+                AddSpeckleNoise(std=0.0, p=0.5),
+            )
+            img = n(img)
+        x = img.unsqueeze(0).to(dev)
+        #show_img(img)
+        with torch.no_grad():
+            lbl_pred = model(x).squeeze(0).detach().cpu()
+        abs_err = abs(lbl_true - lbl_pred)
+        eps = 1e-8
+        prc_err = ((lbl_pred - lbl_true.cpu()).abs() / (lbl_true.cpu().abs() + eps) * 100.0).tolist()
+        if any(v > thresh for v in prc_err):
+
+            print(f"{f.name}: " + ",\t".join(f"{LABEL_KEYS[i]}={prc_err[i]:.2f}%" for i in range(4)))
+
+            true_vals = [float(lbl_true[i].cpu()) for i in range(4)]
+            print("\t" + "\t" + "\t".join(f"true_{LABEL_KEYS[i]}={true_vals[i]:.6g}" for i in range(4)))
+        else:
+            # element-wise accumulate
+            error = [error[i] + abs_err[i] for i in range(len(abs_err))]
+            error_prc = [error_prc[i] + prc_err[i] for i in range(len(prc_err))]
+            max_prc_err = [max(max_prc_err[i], prc_err[i]) for i in range(4)]
+            it += 1
+    # averages per label
+    avg_prc_err = [error_prc[i] / it for i in range(len(error_prc))]
+
+    plot_error_prc(it, avg_prc_err, max_prc_err, str(save_path_pct))
+    print("######")
+    avg_err = 0
+    for i in range(len(avg_prc_err)):
+        avg_err += avg_prc_err[i]
+    avg_err /= len(avg_prc_err)
+    print("avg error------" + str(avg_err))
+    print(" avg per label error----" + str(avg_prc_err))

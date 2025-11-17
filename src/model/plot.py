@@ -25,16 +25,13 @@ def plot_all_val_losses(all_val_losses, out_dir, filename="all_val_losses.png"):
     print(f"Saved: {path}")
 
 def plot_loss_graphs(train_losses, val_losses, run_number, num_epochs, learning_rate, batch_size, layers, out_dir,lr_tag):
-    """
-    Per-run: train + val loss. REQUIRED: out_dir (usually the run's figs/).
-    """
+
     os.makedirs(out_dir, exist_ok=True)
     epochs = range(1, len(train_losses) + 1)
 
     plt.figure(figsize=(8, 6))
     plt.plot(epochs, train_losses, label='Training Loss')
-    if val_losses:
-        plt.plot(epochs, val_losses, label='Validation Loss')
+    plt.plot(epochs, val_losses, label='Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss over Epochs')
@@ -46,6 +43,7 @@ def plot_loss_graphs(train_losses, val_losses, run_number, num_epochs, learning_
              fontsize=10, bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=1'))
 
     plt.savefig(os.path.join(out_dir, f'loss_graph_run{run_number}.png'))
+    #plt.show()
     plt.close()
 
 def plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate, batch_size, layers, out_dir, lr_tag):

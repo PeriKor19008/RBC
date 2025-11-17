@@ -3,86 +3,29 @@ from __future__ import annotations
 from sympy.physics.units import frequency
 from src.model.noise import *
 from src.utils.paths import rel_to_root
+from src.utils.show_image import display_image
 from tests_helper import *
 from occlusion import *
 from frequency import *
 from GradCAM import *
-
+from src.model.experiments.ae_test_helpers import test_ae, load_ae_model
 LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
 
-def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | None = None, thresh: float = 15.0,
-                   block:bool = False,jitter:bool = False,noise:bool = False):
-    dir_path = Path(dir_path).resolve()
-    if not dir_path.exists() or not dir_path.is_dir():
-        raise FileNotFoundError(f"Directory not found: {dir_path}")
-    model.eval()
-    dev = next(model.parameters()).device
 
-    # accumulators (sum across samples)
-    error = torch.zeros(4)
-    error_prc = torch.zeros(4)
-    max_prc_err = torch.zeros(4)
-    it = 0
 
-    for f in dir_path.iterdir():
-        if not f.is_file() or f.suffix.lower() != ".f06":
-            continue
-        img, lbl_true = load_rbc_txt_image_and_labels(f)
-        if block:
-            img = change_block(1,img)
-        if jitter:
-            img = jitter_block(7,img,5)
 
-        if noise:
-            n = nn.Sequential(
-                AddGaussianNoise(std=0.0, p=0.5),
-                AddSpeckleNoise(std=0.6, p=0.5),
-            )
-            img = n(img)
-        x = img.unsqueeze(0).to(dev)
-        with torch.no_grad():
-            lbl_pred = model(x).squeeze(0).detach().cpu()
-        abs_err = abs(lbl_true - lbl_pred)
-        eps = 1e-8
-        prc_err = ((lbl_pred - lbl_true.cpu()).abs() / (lbl_true.cpu().abs() + eps) * 100.0).tolist()
-        if any(v > thresh for v in prc_err):
-
-            print(f"{f.name}: " + ",\t".join(f"{LABEL_KEYS[i]}={prc_err[i]:.2f}%" for i in range(4)))
-
-            true_vals = [float(lbl_true[i].cpu()) for i in range(4)]
-            print("\t" + "\t" + "\t".join(f"true_{LABEL_KEYS[i]}={true_vals[i]:.6g}" for i in range(4)))
-        else:
-            # element-wise accumulate
-            error = [error[i] + abs_err[i] for i in range(len(abs_err))]
-            error_prc = [error_prc[i] + prc_err[i] for i in range(len(prc_err))]
-            max_prc_err = [max(max_prc_err[i], prc_err[i]) for i in range(4)]
-            it += 1
-    # averages per label
-    avg_abs_err = [error[i] / it for i in range(len(error))]
-    avg_prc_err = [error_prc[i] / it for i in range(len(error_prc))]
-
-    plot_error_prc(it, avg_prc_err, max_prc_err, str(save_path_pct))
-    print("######")
-    avg_err = 0
-    for i in range(len(avg_prc_err)):
-        avg_err += avg_prc_err[i]
-    avg_err /= len(avg_prc_err)
-    print("avg error------" + str(avg_err))
-    print(" avg per label error----" + str(avg_prc_err))
 
 def cor_run():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     ckpt_path = rel_to_root(
-        "outputs/models/FlexibleCNN/noise_BEST_old6_20251105-112939_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004819.pt")
+        "outputs/models/AERegressor/20251114-160908_AERegressor_e15_lr0.001_bs32_wd0.0_seed42_dsmanual/ae_regressor_full.pt")
     data_dir = rel_to_root("Data/extra_runs_for_check")
     data_dir_good = rel_to_root("Data/res_to_test")
     out_pct = rel_to_root("outputs/test_graphs/extra_runs_avg_pct_error.png")
     model = torch.load(ckpt_path, map_location="cpu", weights_only=False).to(device).eval()  # <— full module
 
-    test_avg_error(model,data_dir_good,str(out_pct),99,block=False,jitter=False,noise=True)
-    #test_erase(model,data_dir_good,str(out_pct))
-
+    test_avg_error(model,data_dir_good,str(out_pct),25,block=False,jitter=False,noise=True)
 
 def run_occlusion_demo(ckpt_path: str, sample_path: str,per_label: bool,avg:bool):
     # 1) load model
@@ -189,12 +132,12 @@ def frequency_test():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     ckpt_path = rel_to_root(
-        "outputs/models/FlexibleCNN/BEST_old6_20251104-070605_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004462.pt")
+        "outputs/models/FlexibleCNN/noise_BEST_old6_20251105-112939_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004819.pt")
     model = torch.load(ckpt_path, map_location="cpu", weights_only=False).to(device).eval()  # <— full module
     data_dir = rel_to_root("Data/extra_runs_good_img")
 
-    #test_gaussian_blur_sweep(model,data_dir)
-    test_unsharp_sweep(model,data_dir)
+    test_gaussian_blur_sweep(model,data_dir)
+    #test_unsharp_sweep(model,data_dir)
 
 def run_grad_Cam():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -210,6 +153,14 @@ def run_grad_Cam():
 
     plot_grad_cam(cam, img, k)
 
+def run_ae_test():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    ckpt_path = "outputs/models/FCAutoencoder/20251113-053246_FCAutoencoder_e45_lr0.0008_bs32_wd0.0_seed42_dsmanual/autoencoder_final.pt"
+    data_dir_good = rel_to_root("Data/res_to_test")
+    out_pct = rel_to_root("outputs/test_graphs/extra_runs_avg_pct_error.png")
+    model = load_ae_model(ckpt_path,64,[1024,512,128])
+
+    test_ae(model, data_dir_good, str(out_pct))
 
 
 
@@ -219,14 +170,15 @@ if __name__ == "__main__":
 
     #print(load_rbc_txt_image_and_labels("../../../Data/extra_runs_for_check/05_0362516257251a.f06"))
 
-    run_occlusion_demo(
-        ckpt_path="outputs/models/FlexibleCNN/BEST_old6_20251104-070605_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004462.pt",
-        sample_path="Data/extra_runs_good_img",per_label=False,avg=True,
-    )
+    # run_occlusion_demo(
+    #     ckpt_path="outputs/models/FlexibleCNN/BEST_old6_20251104-070605_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004462.pt",
+    #     sample_path="Data/extra_runs_good_img",per_label=False,avg=True,
+    # )
 
-    #cor_run()
+    cor_run()
     #run_grad_Cam()
     #frequency_test()
+    #run_ae_test()
 
 
 

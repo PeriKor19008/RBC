@@ -8,9 +8,7 @@ from Data.DB_setup.image_db_utils import ImageDB
 
 
 def display_image(image_data, use_log=True,noise:bool=False):
-    if not image_data:
-        print(" No image data found.")
-        return
+
 
     image_text = image_data['log_image'] if use_log else image_data['regular_image']
     values = [float(line.replace('D', 'E')) for line in image_text.strip().splitlines()]
@@ -57,15 +55,17 @@ def plot_image_as_line(image_data, use_log=False):
     plt.grid(True)
     plt.tight_layout()
     plt.figure()
-
+    plt.show()
 
 # === Example usage ===
 if __name__ == '__main__':
     db = ImageDB()
     image = db.search_image_by_dtr(7000,2250,600)
+
     db.close()
 
     #plot_image_as_line(image, use_log=True)
     display_image(image,use_log=True,noise=False)
     display_image(image,use_log=True,noise=True)
-    plt.show()
+    plot_image_as_line(image,use_log=False)
+

@@ -39,10 +39,7 @@ class AddSpeckleNoise(nn.Module):
 
 
 class AddPoissonNoise(nn.Module):
-    """
-    Simulate Poisson shot noise. Assumes x ∈ [0,1].
-    `peak` is the expected photon count at x=1.
-    """
+
     def __init__(self, peak: float = 20.0, p: float = 0.5):
         super().__init__()
         self.peak = float(peak)

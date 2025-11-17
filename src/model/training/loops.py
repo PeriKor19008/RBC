@@ -12,7 +12,7 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
                          scheduler_name: str | None = None, scheduler_params: dict | None = None,
                          selection="val_loss"):
                         #selection="avg_pct" or "val_loss"
-
+    print(selection)
     steps_per_epoch = len(dataloaders['train'])
     scheduler, sched_mode = build_scheduler(
         optimizer,
@@ -51,57 +51,55 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
     y_std = y_std.detach()
 
     for epoch in range(num_epochs):
-        if selection == "val_loss":
-            best_val, best_wts, tr, v, lr = _epoch_once_select_by_val_loss(
-                model=model,
-                dataloaders=dataloaders,
-                device=device,
-                optimizer=optimizer,
-                criterion=criterion,
-                scheduler=scheduler,
-                sched_mode=sched_mode,
-                y_mean=y_mean,
-                y_std=y_std,
-                best_val=best_val,
-                best_wts=best_wts,
-                epoch_losses=epoch_losses,
-                val_losses=val_losses,
-                epoch_lr=epoch_lr,
-            )
-            print(f"[{epoch + 1}/{num_epochs}] train={tr:.6f}  val={v:.6f}  lr={lr:.2e}", flush=True)
+        # train
+        model.train()
+        running = 0.0
+        for x, y in dataloaders['train']:
+            x, y = x.to(device), y.to(device)
+            optimizer.zero_grad()
+            out = model(x)
 
-        else:  # selection == "avg_pct"
-            (best_metric,
-             mae_pct_per_label,
-             best_wts,
-             tr, v, macro_pct, lr) = _epoch_once_select_by_avg_pct(
-                model=model,
-                dataloaders=dataloaders,
-                device=device,
-                optimizer=optimizer,
-                criterion=criterion,
-                scheduler=scheduler,
-                sched_mode=sched_mode,
-                y_mean=y_mean,
-                y_std=y_std,
-                best_metric=best_val,
-                best_wts=best_wts,
-                epoch_losses=epoch_losses,
-                val_losses=val_losses,
-                epoch_lr=epoch_lr,
-                pct_eps=1e-8,
-            )
-            # pretty print per-epoch with macro % metric
-            print(
-                f"[{epoch + 1}/{num_epochs}] train={tr:.6f}  val={v:.6f}  pct={macro_pct:.3f}%  lr={lr:.2e}",
-                flush=True
-            )
+            # normalized loss (keep optimization invariant to label scales)
+            y_norm = (y - y_mean) / y_std
+            out_norm = (out - y_mean) / y_std
+            loss = criterion(out_norm, y_norm)
+            loss.backward()
+            optimizer.step()
 
-            # keep a reference to the best per-label % at the time it occurred
-            if abs(macro_pct - best_metric) < 1e-12:
-                best_pct_per_label = mae_pct_per_label
+            # per-step schedulers (OneCycle, Cosine w/ per-step, etc.)
+            step_scheduler(scheduler, sched_mode)
 
-    # save best to this run
+            running += loss.item()
+
+        epoch_loss = running / len(dataloaders['train'])
+        epoch_losses.append(epoch_loss)
+
+        # val (normalized loss)
+        model.eval()
+        v = 0.0
+        with torch.no_grad():
+            for x, y in dataloaders.get('val', []):
+                x, y = x.to(device), y.to(device)
+                out = model(x)
+                y_norm = (y - y_mean) / y_std
+                out_norm = (out - y_mean) / y_std
+                v += criterion(out_norm, y_norm).item()
+        v /= max(1, len(dataloaders.get('val', [])))
+        val_losses.append(v)
+
+        # per-epoch schedulers (Cosine, Step, Plateau)
+        if sched_mode in {"epoch", "plateau"}:
+            step_scheduler(scheduler, sched_mode, val_loss=v)
+
+        current_lr_val = optimizer.param_groups[0]["lr"]
+        epoch_lr.append(current_lr_val)
+
+        # selection: lowest val loss
+        if v < best_val:
+            best_val = v
+            best_wts = copy.deepcopy(model.state_dict())
+            print(f"[{epoch + 1}/{num_epochs}] train={epoch_loss:.6f}  val={v:.6f}  lr={current_lr_val:.2e}", flush=True)
+                        # save best to this run
     model.load_state_dict(best_wts)
 
     # save best checkpoint
@@ -213,6 +211,7 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
 
     # save into this run
     ckpt = os.path.join(run_dir, "autoencoder_final.pt")
+    #torch.save(model, ckpt)
     torch.save(model.state_dict(), ckpt)
 
     # per-run combined plot → run_dir/figs/
@@ -312,7 +311,7 @@ def _epoch_once_select_by_val_loss(
         best_val = v
         best_wts = copy.deepcopy(model.state_dict())
 
-    return best_val, best_wts, epoch_loss, v, current_lr_val
+    return best_val, best_wts, epoch_loss,val_losses, v, current_lr_val
 
 
 def _epoch_once_select_by_avg_pct(
@@ -394,4 +393,4 @@ def _epoch_once_select_by_avg_pct(
         best_metric = macro_pct
         best_wts = copy.deepcopy(model.state_dict())
 
-    return best_metric, mae_pct_per_label.detach().cpu(), best_wts, epoch_loss, v, macro_pct, current_lr_val
+    return best_metric, mae_pct_per_label.detach().cpu(), best_wts, epoch_loss,val_losses, v, macro_pct, current_lr_val

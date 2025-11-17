@@ -36,8 +36,8 @@ def log_run_details(num_epochs, learning_rate, batch_size, layers,
         f.write(f"---------------------------------------------------------\n")
     lr_tag =scheduler_name
     # keep your old plot, saved into this run’s figs/
-    plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate,
-                             batch_size, layers, out_dir=figs_dir,lr_tag=lr_tag)
+    #plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate,
+                             #batch_size, layers, out_dir=figs_dir,lr_tag=lr_tag)
 
     if epoch_lrs:
         plot_lr_graph(epoch_lrs, run_number, num_epochs, learning_rate,

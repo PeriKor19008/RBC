@@ -7,7 +7,7 @@ from Data.DB_setup.db_config import DB_CONFIG
 import torch, os
 
 
-def train_ae_regressor_head():
+def train_ae_regressor_head(epochs,learning_rate,latent_dim,layers,model_ckpt: str = None):
 # build dataloader
     full_ds = RBCDatasetDB(db_config=DB_CONFIG, use_log_image=False)  # your dataset that returns (img, y[4])
     train_size = int(0.8 * len(full_ds))
@@ -23,14 +23,13 @@ def train_ae_regressor_head():
 
 
 #create regressor from trained AE
-    AE_CKPT = "../../outputs/models/FCAutoencoder/sched_20251012-153447_FCAutoencoder_e50_lr0.0001_bs32_wd0.0_seed42_dsmanual/autoencoder_final.pt"  # path to trained model
-
+    AE_CKPT = "../../"+ model_ckpt
     reg = AERegressor.from_checkpoint(
         ae_builder=FCAutoencoder,
         ckpt_path=AE_CKPT,
-        ae_kwargs={"latent_dim": 64, "hidden_dims": [1024, 512, 128]},  # use the dims you trained with check .json of the model
-        latent_dim=64,                         # same latent as AE
-        head_hidden=(128, 64),                 # tiny MLP head
+        ae_kwargs={"latent_dim": latent_dim, "hidden_dims": [1024, 512, 128]},  # use the dims you trained with check .json of the model
+        latent_dim=latent_dim,                         # same latent as AE
+        head_hidden=layers,                 # tiny MLP head
         freeze_encoder=True,                   # freeze AE encoder
         dropout=0.1,
         device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
@@ -40,16 +39,16 @@ def train_ae_regressor_head():
 
 #train regressor
     criterion = torch.nn.MSELoss()            # or torch.nn.SmoothL1Loss()
-    optimizer = torch.optim.Adam(reg.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(reg.parameters(), lr=learning_rate)
 
     train_losses, val_losses, run_dir = train_model_val_loss(
         model=reg,
         dataloaders=dls,
         criterion=criterion,
         optimizer=optimizer,
-        num_epochs=50,
+        num_epochs=epochs,
         batch_size=BATCH,
-        learning_rate=1e-3,
+        learning_rate=learning_rate,
         layers="AE64_head128x64_frozen",      # will appear in your logs/figs
         # if you wired schedulers.py, you can add:
         scheduler_name="onecycle",

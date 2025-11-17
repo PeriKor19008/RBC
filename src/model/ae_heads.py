@@ -130,7 +130,7 @@ class AERegressor(nn.Module):
         """
         ae_kwargs = dict(ae_kwargs or {})
         ae = ae_builder(**ae_kwargs)
-        state = torch.load(ckpt_path, map_location=device or "cpu")
+        state = torch.load(ckpt_path, map_location=device or "cpu",weights_only=False)
         ae.load_state_dict(state, strict=strict)
         if device is not None:
             ae.to(device)

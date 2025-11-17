@@ -3,6 +3,8 @@ from Data.DB_setup.image_db_utils import ImageDB
 import matplotlib.pyplot as plt
 import os
 
+from src.model.experiments.tests_helper import show_img
+from src.utils.show_image import display_image
 
 
 def compare_images(image_data1, image_data2, use_log):
@@ -18,11 +20,13 @@ def compare_images(image_data1, image_data2, use_log):
 
     img1 =[float(line.replace('D', 'E')) for line in img1_txt.strip().splitlines()]
     img2= [float(line.replace('D', 'E')) for line in img2_txt.strip().splitlines()]
-
-    if len(img1)!=2500 or len(img2) != 2500:
+    display_image(image_data2,False,False)
+    display_image(image_data1, False, False)
+    if len(img1) != 2500 or len(img2) != 2500:
         raise ValueError("expected 2500 values")
     img1 = np.array(img1)
     img2 = np.array(img2)
+
 
 
     diff = (img1 - img2)
@@ -101,7 +105,7 @@ def pixel_variance_deviation(file):
 # === Example usage ===
 if __name__ == '__main__':
     db = ImageDB()
-    compare_images(db.search_image_by_all_dtr(7000,2250,600,70),db.search_image_by_all_dtr(7000,2250,600,45),0)
+    compare_images(db.search_image_by_all_dtr(9000,2250,600,70),db.search_image_by_all_dtr(9000,2250,600,45),0)
     #file_comp("../../Data/results/Refindx1.005/0450015006001a.f06", "../../Data/results/Refindx1.075/0450015006001a.f06")
     #pixel_variance_deviation("0450015006001a.f06")
 
