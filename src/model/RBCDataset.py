@@ -2,6 +2,7 @@
 
 
 import torch
+from torch import nn
 from torch.utils.data import Dataset
 import numpy as np
 import mysql.connector
@@ -61,4 +62,18 @@ class RBCDatasetDB(Dataset):
         except Exception:
             # swallow anything at interpreter shutdown
             pass
+
+class DenoisingDataset(torch.utils.data.Dataset):
+    def __init__(self, base_dataset, noise_transform: nn.Module):
+        super().__init__()
+        self.base_dataset = base_dataset
+        self.noise_transform = noise_transform
+
+    def __len__(self):
+        return len(self.base_dataset)
+
+    def __getitem__(self, idx):
+        x, _ = self.base_dataset[idx]
+        x_noisy = self.noise_transform(x)
+        return x_noisy, x
 

@@ -1,4 +1,4 @@
-import os
+import torch.nn as nn
 import torch
 from src.model.training.logging import *
 from src.model.plot import *
@@ -10,7 +10,7 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
                          num_epochs, batch_size, learning_rate, layers=None,
                          conv_config=None, fc_config=None,
                          scheduler_name: str | None = None, scheduler_params: dict | None = None,
-                         selection="val_loss"):
+                         selection="val_loss",ae: nn.Module | None = None):
                         #selection="avg_pct" or "val_loss"
     print(selection)
     steps_per_epoch = len(dataloaders['train'])
@@ -22,7 +22,7 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
         base_lr=learning_rate,
         **(scheduler_params or {})
     )
-    lr_tag = None
+
     if scheduler_name:
         mx = (scheduler_params or {}).get("max_lr", None)
         lr_tag = f"{scheduler_name}, max={mx:.2e}" if mx is not None else str(scheduler_name)
@@ -31,6 +31,10 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
+    if ae is not None:
+        ae.to(device)
+        ae.eval()
+
 
     run_dir, figs_dir, run_id, arch_name = start_run(
         model, num_epochs, learning_rate, batch_size, layers,
@@ -42,7 +46,7 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
     best_wts = copy.deepcopy(model.state_dict())
 
     best_val = float("inf")
-    best_pct_per_label = None
+
 
 
     y_mean, y_std = _compute_label_stats(dataloaders['train'], device)
@@ -56,6 +60,9 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
         running = 0.0
         for x, y in dataloaders['train']:
             x, y = x.to(device), y.to(device)
+            if ae is not None:
+                with torch.no_grad():
+                    x = ae(x)
             optimizer.zero_grad()
             out = model(x)
 
@@ -80,6 +87,8 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
         with torch.no_grad():
             for x, y in dataloaders.get('val', []):
                 x, y = x.to(device), y.to(device)
+                if ae is not None:
+                    x = ae(x)
                 out = model(x)
                 y_norm = (y - y_mean) / y_std
                 out_norm = (out - y_mean) / y_std
@@ -138,7 +147,8 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
 
 def train_autoencoder(model, dataloaders, criterion, optimizer,
                       num_epochs, batch_size, learning_rate, layers=None,
-                      scheduler_name: str | None = None, scheduler_params: dict | None = None):
+                      scheduler_name: str | None = None,
+                      scheduler_params: dict | None = None,):
 
     steps_per_epoch = len(dataloaders['train'])
     scheduler, sched_mode = build_scheduler(
@@ -151,14 +161,13 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
     )
     lr_tag = None
     if scheduler_name:
-            mx = (scheduler_params or {}).get("max_lr")
-            lr_tag = f"{scheduler_name}, max={mx:.2e}" if mx else scheduler_name
+        mx = (scheduler_params or {}).get("max_lr")
+        lr_tag = f"{scheduler_name}, max={mx:.2e}" if mx else scheduler_name
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     layers = layers if layers is not None else "AE"
 
-    # (optional banner)
     if device.type == "cuda":
         try:
             name = torch.cuda.get_device_name(torch.cuda.current_device())
@@ -178,11 +187,19 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
         # ---- train ----
         model.train()
         running = 0.0
-        for x, _ in dataloaders['train']:
-            x = x.to(device)
+        for batch in dataloaders['train']:
+
+            # batch = (x_noisy, x_clean)
+            x_noisy, x_clean = batch
+            x_noisy = x_noisy.to(device)
+            x_clean = x_clean.to(device)
+            inp = x_noisy
+            target = x_clean
+
+
             optimizer.zero_grad()
-            rec = model(x)
-            loss = criterion(rec, x)
+            rec = model(inp)
+            loss = criterion(rec, target)
             loss.backward()
             optimizer.step()
             step_scheduler(scheduler, sched_mode)
@@ -195,9 +212,16 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
         model.eval()
         v = 0.0
         with torch.no_grad():
-            for x, _ in dataloaders['val']:
-                x = x.to(device)
-                v += criterion(model(x), x).item()
+            for batch in dataloaders['val']:
+
+                x_noisy, x_clean = batch
+                x_noisy = x_noisy.to(device)
+                x_clean = x_clean.to(device)
+                inp = x_noisy
+                target = x_clean
+
+
+                v += criterion(model(inp), target).item()
 
         epoch_val_loss = v / len(dataloaders['val'])
         val_losses.append(epoch_val_loss)
@@ -209,25 +233,26 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
               f"train={epoch_train_loss:.6f}  val={epoch_val_loss:.6f}  lr={current_lr:.2e}",
               flush=True)
 
-    # save into this run
     ckpt = os.path.join(run_dir, "autoencoder_final.pt")
-    #torch.save(model, ckpt)
-    torch.save(model.state_dict(), ckpt)
+    model_cpu = copy.deepcopy(model).to("cpu")
+    torch.save(model_cpu, ckpt)
 
-    # per-run combined plot → run_dir/figs/
-    plot_loss_graphs(train_losses, val_losses, run_number=1, num_epochs=num_epochs,
-                     learning_rate=learning_rate, batch_size=batch_size,
-                     layers=layers, out_dir=figs_dir,lr_tag=lr_tag)
+    plot_loss_graphs(
+        train_losses, val_losses, run_number=1, num_epochs=num_epochs,
+        learning_rate=learning_rate, batch_size=batch_size,
+        layers=layers, out_dir=figs_dir, lr_tag=lr_tag
+    )
 
-    # per-run log → run_dir/run_log.txt
     run_log_path = os.path.join(run_dir, "run_log.txt")
-    log_run_details(num_epochs, learning_rate, batch_size, layers,
-                    final_loss=val_losses[-1], device=device,
-                    epoch_losses=train_losses, val_losses=val_losses,
-                    run_log_path=run_log_path, figs_dir=figs_dir,scheduler_name=scheduler_name,scheduler_params=scheduler_params)
+    log_run_details(
+        num_epochs, learning_rate, batch_size, layers,
+        final_loss=val_losses[-1], device=device,
+        epoch_losses=train_losses, val_losses=val_losses,
+        run_log_path=run_log_path, figs_dir=figs_dir,
+        scheduler_name=scheduler_name, scheduler_params=scheduler_params
+    )
 
     return train_losses, val_losses, run_dir
-
 
 def _compute_label_stats(train_loader, device):
     s = torch.zeros(4, device=device)

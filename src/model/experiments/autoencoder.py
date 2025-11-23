@@ -10,12 +10,14 @@ from src.model.noise import *
 
 
 
-def run_autoencoder(batchSize, epochs,lr_rate, h_layers=None, latent_dim=None, noise:bool = False):
+def run_autoencoder(batchSize, epochs, lr_rate, h_layers=None,
+                    latent_dim=None):
     full_dataset = RBCDatasetDB(db_config=DB_CONFIG, use_log_image=False)
     if h_layers is None:
         h_layers = [1024, 512, 128]
     if latent_dim is None:
         latent_dim = 64
+
     model = FCAutoencoder(latent_dim=latent_dim, hidden_dims=h_layers)
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr_rate)
@@ -23,22 +25,28 @@ def run_autoencoder(batchSize, epochs,lr_rate, h_layers=None, latent_dim=None, n
 
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
-    train_ds, val_dataset = random_split(full_dataset, [train_size, val_size])
+    train_ds, val_ds = random_split(full_dataset, [train_size, val_size])
+
     train_dataset = train_ds
-    if noise:
-        train_tf = nn.Sequential(
-            AddGaussianNoise(std=0.02, p=0.7),
-            AddSpeckleNoise(std=0.02, p=0.5),
-        )
-        train_dataset = WithTransform(train_ds, transform=train_tf)
+    val_dataset = val_ds
+
+    # when noise=True → train a *denoising* autoencoder:
+    # input = noisy image, target = clean image
+
+    train_tf = nn.Sequential(
+        AddGaussianNoise(std=0.4, p=0.7),
+        AddSpeckleNoise(std=0.4, p=0.5),
+    )
+    train_dataset = DenoisingDataset(train_ds, noise_transform=train_tf)
+    val_dataset = DenoisingDataset(val_ds, noise_transform=train_tf)
 
     dataloaders = {
         'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True),
         'val': DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-
     }
+
     label = f"[{','.join(str(x) for x in h_layers)}]-{latent_dim}"
-    train_losses, val_losses, run_dir  = train_autoencoder(
+    train_losses, val_losses, run_dir = train_autoencoder(
         model=model,
         dataloaders=dataloaders,
         criterion=criterion,
@@ -54,7 +62,8 @@ def run_autoencoder(batchSize, epochs,lr_rate, h_layers=None, latent_dim=None, n
             "div_factor": (lr_rate * 2.0) / lr_rate,  # == 2.0
             "final_div_factor": 1e4,
             "cycle_momentum": False
-        }
+        },
+           # <--- tell trainer we are in denoising mode
     )
 
     return train_losses, val_losses, run_dir

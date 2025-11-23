@@ -1,18 +1,14 @@
-import torch
 from torch import optim
 from Data.DB_setup.db_config import DB_CONFIG
 from torch.utils.data import DataLoader, random_split
-from src.model.RBCDataset import RBCDatasetDB
 from src.model.model import FlexibleCNN
 from src.model.training.loops import train_model_val_loss
-from src.model.plot import *
-from src.model.training.logging import get_next_run_number
 from datetime import datetime
 from src.model.training.run_dirs import *
 from src.model.noise import *
 
 
-def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool = False):
+def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool = False,ae: nn.Module | None = None):
     full_dataset = RBCDatasetDB(db_config=DB_CONFIG, use_log_image=False)
 
     # ---create datasets---
@@ -79,7 +75,8 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
             "div_factor": (learning_rate * 5.0) / learning_rate,  # == 5.0
             "final_div_factor": 1e4,
             "cycle_momentum": False
-        }
+        },
+        ae=ae
     )
 
 

@@ -297,7 +297,7 @@ def plot_error_prc(iterations,errors: List[float],max_errors: List[float], save_
 
 
 def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | None = None, thresh: float = 15.0,
-                   block:bool = False,jitter:bool = False,noise:bool = False):
+                   block:bool = False,jitter:bool = False,noise:bool = True,ae : nn.Module = None):
     dir_path = Path(dir_path).resolve()
     if not dir_path.exists() or not dir_path.is_dir():
         raise FileNotFoundError(f"Directory not found: {dir_path}")
@@ -321,12 +321,16 @@ def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | 
 
         if noise:
             n = nn.Sequential(
-                AddGaussianNoise(std=0.0, p=0.5),
-                AddSpeckleNoise(std=0.0, p=0.5),
+                AddGaussianNoise(std=0.8, p=0.5),
+                AddSpeckleNoise(std=0.8, p=0.5),
             )
             img = n(img)
         x = img.unsqueeze(0).to(dev)
         #show_img(img)
+        if  ae:
+            x = ae(x)
+            #show_img(x.squeeze(0))
+
         with torch.no_grad():
             lbl_pred = model(x).squeeze(0).detach().cpu()
         abs_err = abs(lbl_true - lbl_pred)

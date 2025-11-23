@@ -1,10 +1,5 @@
 from __future__ import annotations
-
-from sympy.physics.units import frequency
-from src.model.noise import *
 from src.utils.paths import rel_to_root
-from src.utils.show_image import display_image
-from tests_helper import *
 from occlusion import *
 from frequency import *
 from GradCAM import *
@@ -19,13 +14,15 @@ def cor_run():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     ckpt_path = rel_to_root(
-        "outputs/models/AERegressor/20251114-160908_AERegressor_e15_lr0.001_bs32_wd0.0_seed42_dsmanual/ae_regressor_full.pt")
-    data_dir = rel_to_root("Data/extra_runs_for_check")
+        "outputs/models/FlexibleCNN/noise_BEST_old6_20251105-112939_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004819.pt")
+    ae_path = rel_to_root(
+        "outputs/models/FCAutoencoder/cor_noise_20251123-193317_FCAutoencoder_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/autoencoder_final.pt")
     data_dir_good = rel_to_root("Data/res_to_test")
     out_pct = rel_to_root("outputs/test_graphs/extra_runs_avg_pct_error.png")
-    model = torch.load(ckpt_path, map_location="cpu", weights_only=False).to(device).eval()  # <— full module
+    model = torch.load(ckpt_path, map_location="cpu", weights_only=False).to(device).eval()
+    ae_model =    torch.load(ae_path, map_location="cpu", weights_only=False).to(device).eval()
 
-    test_avg_error(model,data_dir_good,str(out_pct),25,block=False,jitter=False,noise=True)
+    test_avg_error(model,data_dir_good,str(out_pct),99,block=False,jitter=False,noise=True,)
 
 def run_occlusion_demo(ckpt_path: str, sample_path: str,per_label: bool,avg:bool):
     # 1) load model
