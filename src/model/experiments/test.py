@@ -3,7 +3,6 @@ from src.utils.paths import rel_to_root
 from occlusion import *
 from frequency import *
 from GradCAM import *
-from src.model.experiments.ae_test_helpers import test_ae, load_ae_model
 LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
 
 
@@ -150,14 +149,7 @@ def run_grad_Cam():
 
     plot_grad_cam(cam, img, k)
 
-def run_ae_test():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    ckpt_path = "outputs/models/FCAutoencoder/20251113-053246_FCAutoencoder_e45_lr0.0008_bs32_wd0.0_seed42_dsmanual/autoencoder_final.pt"
-    data_dir_good = rel_to_root("Data/res_to_test")
-    out_pct = rel_to_root("outputs/test_graphs/extra_runs_avg_pct_error.png")
-    model = load_ae_model(ckpt_path,64,[1024,512,128])
 
-    test_ae(model, data_dir_good, str(out_pct))
 
 
 
@@ -172,8 +164,8 @@ if __name__ == "__main__":
     #     sample_path="Data/extra_runs_good_img",per_label=False,avg=True,
     # )
 
-    cor_run()
-    #run_grad_Cam()
+    #cor_run()
+    run_grad_Cam()
     #frequency_test()
     #run_ae_test()
 

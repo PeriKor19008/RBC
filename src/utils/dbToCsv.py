@@ -1,5 +1,5 @@
-# export_to_csv.py
-import os, csv, argparse, mysql.connector, os.path as osp
+
+import csv, argparse, mysql.connector, os.path as osp
 
 """
 Exports the columns we need from ImageData:
@@ -39,11 +39,11 @@ for r in cur:
         try:
             rel = osp.relpath(fp, root).replace("\\","/")
         except Exception:
-            # If 'filepath' isn't under results_root, keep it empty; we'll fallback later.
+
             rel = ""
     rows.append({
-        "relative_path": rel,          # preferred in Colab
-        "filepath": fp,                # kept as a fallback
+        "relative_path": rel,
+        "filepath": fp,
         "filename": (r.get("filename") or ""),
         "diameter": r["diameter"],
         "thickness": r["thickness"],

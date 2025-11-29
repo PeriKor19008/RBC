@@ -16,9 +16,6 @@ from typing import Dict, Any, List, Optional
 import matplotlib.pyplot as plt
 
 
-# -----------------------
-# Run configuration
-# -----------------------
 
 @dataclass
 class RunConfig:
@@ -65,20 +62,6 @@ def ensure_run_dir(base_dir: str, run_id: str) -> str:
 # Logging helpers
 # -----------------------
 
-class MetricLogger:
-    def __init__(self, run_dir: str, csv_name: str = "metrics.csv"):
-        self.run_dir = Path(run_dir)
-        self.csv_path = self.run_dir / csv_name
-        if not self.csv_path.exists():
-            with open(self.csv_path, "w", newline="") as f:
-                w = csv.DictWriter(f, fieldnames=["epoch", "train_loss", "val_loss"])
-                w.writeheader()
-
-    def log(self, epoch: int, train_loss: float, val_loss: float):
-        with open(self.csv_path, "a", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=["epoch", "train_loss", "val_loss"])
-            w.writerow({"epoch": epoch, "train_loss": train_loss, "val_loss": val_loss})
-
 
 def write_config(run_dir: str, cfg: RunConfig, ds_fingerprint: str, extra: Optional[Dict[str, Any]] = None):
     path = Path(run_dir) / "config.json"
@@ -88,133 +71,6 @@ def write_config(run_dir: str, cfg: RunConfig, ds_fingerprint: str, extra: Optio
         payload.update(extra)
     with open(path, "w") as f:
         json.dump(payload, f, indent=2)
-
-
-def write_summary(run_dir: str, best_epoch: int, best_metric_name: str, best_metric_value: float):
-    path = Path(run_dir) / "summary.json"
-    payload = {
-        "best_epoch": best_epoch,
-        "best_metric_name": best_metric_name,
-        "best_metric_value": best_metric_value,
-    }
-    with open(path, "w") as f:
-        json.dump(payload, f, indent=2)
-
-
-# -----------------------
-# Simple clean plotting
-# -----------------------
-
-def plot_losses(train_losses, val_losses, out_path: str, title: str = "Loss vs Epoch"):
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ax.plot(range(1, len(train_losses) + 1), train_losses, label="Train")
-    ax.plot(range(1, len(val_losses) + 1), val_losses, label="Val")
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Loss")
-    ax.set_title(title)
-    ax.legend()
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=150)
-    plt.close(fig)
-
-
-# --- Multi-run comparison helpers ---
-
-def _read_metrics_csv(csv_path: str):
-    """Return (train_losses, val_losses) lists from a metrics.csv."""
-    train, val = [], []
-    try:
-        import csv
-        with open(csv_path, "r") as f:
-            r = csv.DictReader(f)
-            for row in r:
-                # be robust to missing val_loss (e.g., pure-train runs)
-                train.append(float(row.get("train_loss", "nan")))
-                v = row.get("val_loss", "")
-                val.append(float(v) if v not in ("", None) else float("nan"))
-    except Exception:
-        pass
-    return train, val
-
-def _label_from_config(cfg_path: str):
-    """Build a short label from config.json, e.g. FlexibleCNN lr0.001 bs32 e50."""
-    try:
-        import json, os
-        with open(cfg_path, "r") as f:
-            cfg = json.load(f)
-        arch = cfg.get("arch", "model")
-        lr = cfg.get("lr", "?")
-        bs = cfg.get("batch_size", "?")
-        e  = cfg.get("epochs", "?")
-        extra = cfg.get("notes", "")
-        # squeeze long notes
-        if isinstance(extra, str) and len(extra) > 32:
-            extra = extra[:29] + "..."
-        label = f"{arch} lr{lr} bs{bs} e{e}"
-        if extra:
-            label += f" [{extra}]"
-        return label
-    except Exception:
-        return "run"
-
-def compare_runs(run_dirs, out_path: str, which: str = "val", title: str = "Run comparison"):
-    """
-    Overlay multiple runs on one plot.
-      run_dirs: list of per-run folders (each has metrics.csv + config.json)
-      which: "val" or "train"
-    """
-    fig, ax = plt.subplots(figsize=(9, 6))
-    any_plotted = False
-
-    for rd in run_dirs:
-        csv_path = os.path.join(rd, "metrics.csv")
-        cfg_path = os.path.join(rd, "config.json")
-        train_losses, val_losses = _read_metrics_csv(csv_path)
-        label = _label_from_config(cfg_path)
-
-        if which == "val" and any(not math.isnan(v) for v in val_losses):
-            y = [v for v in val_losses if not math.isnan(v)]
-            x = list(range(1, len(y) + 1))
-            ax.plot(x, y, label=label)
-            any_plotted = True
-        elif which == "train" and len(train_losses) > 0:
-            y = train_losses
-            x = list(range(1, len(y) + 1))
-            ax.plot(x, y, label=label)
-            any_plotted = True
-
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel(f"{which.capitalize()} loss")
-    ax.set_title(title)
-    if any_plotted:
-        ax.legend(fontsize=8)
-    fig.tight_layout()
-
-    # ensure parent exists
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    fig.savefig(out_path, dpi=150)
-    plt.close(fig)
-
-
-
-def _label_from_config_or_dir(run_dir: str) -> str:
-    cfg = os.path.join(run_dir, "config.json")
-    if os.path.exists(cfg):
-        try:
-            with open(cfg, "r") as f:
-                c = json.load(f)
-            arch = c.get("arch", "model")
-            lr = c.get("lr", "?")
-            bs = c.get("batch_size", "?")
-            e  = c.get("epochs", "?")
-            notes = c.get("notes", "")
-            label = f"{arch} lr{lr} bs{bs} e{e}"
-            if notes:
-                label += f" [{notes}]"
-            return label
-        except Exception:
-            pass
-    return os.path.basename(run_dir)
 
 def _parse_losses_from_log(log_path: str):
     """Returns (train_losses, val_losses) parsed from run_log.txt."""

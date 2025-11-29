@@ -1,14 +1,10 @@
 from __future__ import annotations
-from torch import Tensor
-import matplotlib.pyplot as plt
-from src.model.noise import *
-from pathlib import Path
 from tests_helper import *
 
 LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
 def macro_pct_error(model: nn.Module, x: Tensor, y_true: Tensor, dev: torch.device,vec:bool=False, eps: float = 1e-8) -> float:
     with torch.no_grad():
-        y_pred = model(x.to(dev)).squeeze(0).detach().cpu()  # [4]
+        y_pred = model(x.to(dev)).squeeze(0).detach().cpu()
     y_true = y_true.cpu()
     abs_err = (y_pred - y_true).abs()
     pct = abs_err / (y_true.abs() + eps) * 100.0
@@ -20,22 +16,22 @@ def macro_pct_error(model: nn.Module, x: Tensor, y_true: Tensor, dev: torch.devi
 
 def occlusion_map_simple(
     model: nn.Module,
-    img: Tensor,          # [1,50,50]
-    lbl_true: Tensor,     # [4]
+    img: Tensor,
+    lbl_true: Tensor,
     k: int = 5,
     stride: int = 2,
-    fill: str = "mean",   # "mean" or "zero"
+    fill: str = "mean",
     eps: float = 1e-8,
 ):
     dev = next(model.parameters()).device
     model.eval()
 
-    # baseline macro % on the unmodified image
-    x0 = img.unsqueeze(0)            # [1,1,50,50]
+
+    x0 = img.unsqueeze(0)
     baseline = macro_pct_error(model, x0, lbl_true, dev,False, eps)
 
-    # positions
-    _, H, W = img.shape  # [1,H,W]
+
+    _, H, W = img.shape
     k = int(k)
     stride = int(stride)
     Hpos = 1 + (H - k) // stride
@@ -43,7 +39,7 @@ def occlusion_map_simple(
 
     heat = torch.zeros((Hpos, Wpos), dtype=torch.float32)  # Δ% per position
 
-    # fill value
+
     if fill == "mean":
         fill_val = float(img.mean())
     elif fill == "zero":
@@ -51,7 +47,7 @@ def occlusion_map_simple(
     else:
         fill_val = float(img.mean())
 
-    # scan
+
     for ri, i in enumerate(range(0, H - k + 1, stride)):
         for cj, j in enumerate(range(0, W - k + 1, stride)):
             x_occ = img.clone()
@@ -60,7 +56,7 @@ def occlusion_map_simple(
             occ_macro = macro_pct_error(model, x_occ, lbl_true, dev, False, eps)
             heat[ri, cj] = occ_macro - baseline  # Δ% (positive = harmful)
 
-    return heat, baseline  # heat: [Hpos,Wpos] tensor, baseline: float
+    return heat, baseline
 
 def occlusion_map_simple_avg(
     model: nn.Module,
@@ -94,7 +90,7 @@ def occlusion_map_simple_avg(
             stride=stride,
             fill=fill,
             eps=eps,
-        )  # heat: [Hpos,Wpos], baseline: float
+        )
 
         if heat_sum is None:
             heat_sum = torch.zeros_like(heat, dtype=torch.float32)
@@ -112,14 +108,14 @@ def occlusion_map_simple_avg(
     return avg_heat, avg_baseline, n, ref_img
 
 def plot_occlusion_map_simple(
-    img: Tensor,          # [1,50,50] or [50,50]
-    heat: Tensor,         # [Hpos,Wpos]
+    img: Tensor,
+    heat: Tensor,
     k: int,
     stride: int,
     title: str = "Occlusion Δ% (macro)",
 
 ):
-    # prepare arrays
+
     arr = img.detach().cpu()
     if arr.ndim == 3 and arr.shape[0] == 1:
         arr = arr.squeeze(0)
@@ -135,7 +131,7 @@ def plot_occlusion_map_simple(
     ax1.set_xticks([]); ax1.set_yticks([])
 
     ax2 = fig.add_subplot(1, 2, 2)
-    # show heatmap; y-axis inverted to align visually with image
+
     im = ax2.imshow(heat_np, cmap="hot", interpolation="nearest", origin="upper")
     ax2.set_title(title + f"\n(k={k}, stride={stride})")
     ax2.set_xlabel("x (top-left of block)"); ax2.set_ylabel("y")
@@ -152,14 +148,14 @@ def plot_occlusion_map_simple(
 
 
 def plot_occlusion_maps_per_label(
-    img: Tensor,            # [1,50,50] or [50,50]
-    heat: Tensor,           # [4,Hpos,Wpos]
+    img: Tensor,
+    heat: Tensor,
     k: int,
     stride: int,
-    label_idx: int | None = None,   # None -> plot all 4; else plot a single label
+    label_idx: int | None = None,
 
 ):
-    # image array
+
     arr = img.detach().cpu()
     if arr.ndim == 3 and arr.shape[0] == 1:
         arr = arr.squeeze(0)
@@ -167,8 +163,8 @@ def plot_occlusion_maps_per_label(
     vmin, vmax = float(arr.min()), float(arr.max())
 
     if label_idx is None:
-        fig, axes = plt.subplots(1, 5, figsize=(14, 3.6))  # image + 4 heatmaps
-        # original image
+        fig, axes = plt.subplots(1, 5, figsize=(14, 3.6))
+
         ax0 = axes[0]
         ax0.imshow(arr, cmap="gray", vmin=vmin, vmax=vmax, interpolation="nearest")
         ax0.set_title("Input")
@@ -204,18 +200,18 @@ def plot_occlusion_maps_per_label(
 
 def occlusion_map_per_label(
     model: nn.Module,
-    img: Tensor,          # [1,50,50]
-    lbl_true: Tensor,     # [4]
+    img: Tensor,
+    lbl_true: Tensor,
     k: int = 5,
     stride: int = 2,
-    fill: str = "mean",   # "mean" or "zero"
+    fill: str = "mean",
     eps: float = 1e-8,
 ):
     dev = next(model.parameters()).device
     model.eval()
 
-    # baseline per-label % error on the unmodified image
-    x0 = img.unsqueeze(0)                 # [1,1,50,50]
+
+    x0 = img.unsqueeze(0)
     base_vec = macro_pct_error(model, x0, lbl_true, dev, True, eps)  # [4]
 
     # positions
@@ -225,10 +221,10 @@ def occlusion_map_per_label(
     Hpos = 1 + (H - k) // stride
     Wpos = 1 + (W - k) // stride
 
-    # heatmaps per label: [4, Hpos, Wpos], each cell = Δ% = (occluded% - baseline%)
+
     heat = torch.zeros((4, Hpos, Wpos), dtype=torch.float32)
 
-    # fill value
+
     if fill == "mean":
         fill_val = float(img.mean())
     elif fill == "zero":
@@ -236,22 +232,19 @@ def occlusion_map_per_label(
     else:
         fill_val = float(img.mean())
 
-    # scan
+
     for ri, i in enumerate(range(0, H - k + 1, stride)):
         for cj, j in enumerate(range(0, W - k + 1, stride)):
             x_occ = img.clone()
             x_occ[:, i:i + k, j:j + k] = fill_val
-            x_occ = x_occ.unsqueeze(0)  # [1,1,H,W]
+            x_occ = x_occ.unsqueeze(0)
 
             occ_vec = macro_pct_error(model, x_occ, lbl_true, dev,True, eps)  # [4]
             heat[:, ri, cj] = occ_vec - base_vec  # per-label Δ%
 
-    return heat, base_vec  # heat: [4,Hpos,Wpos], base_vec: [4]
+    return heat, base_vec
 
-# reuse your existing helpers:
-# - load_rbc_txt_image_and_labels
-# - occlusion_map_per_label
-# - plot_occlusion_maps_per_label
+
 
 def occlusion_map_per_label_avg(
     model: nn.Module,
@@ -275,7 +268,7 @@ def occlusion_map_per_label_avg(
         if not f.is_file() or f.suffix.lower() != ".f06":
             continue
 
-        img, lbl_true = load_rbc_txt_image_and_labels(f)   # img: [1,50,50], lbl_true: [4]
+        img, lbl_true = load_rbc_txt_image_and_labels(f)
         if ref_img is None:
             ref_img = img.clone()
 
@@ -287,7 +280,7 @@ def occlusion_map_per_label_avg(
             stride=stride,
             fill=fill,
             eps=eps,
-        )  # heat: [4,Hpos,Wpos], base_vec: [4]
+        )
 
         if heat_sum is None:
             heat_sum = torch.zeros_like(heat, dtype=torch.float32)

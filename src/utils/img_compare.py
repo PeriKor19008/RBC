@@ -2,8 +2,6 @@ import numpy as np
 from Data.DB_setup.image_db_utils import ImageDB
 import matplotlib.pyplot as plt
 import os
-
-from src.model.experiments.tests_helper import show_img
 from src.utils.show_image import display_image
 
 
@@ -31,8 +29,7 @@ def compare_images(image_data1, image_data2, use_log):
 
     diff = (img1 - img2)
     diff2d = diff.reshape((50,50))
-    # Create and show image
-    # Display with diverging colormap
+
     plt.imshow(diff2d, cmap='seismic', vmin=-np.max(np.abs(diff2d)), vmax=np.max(np.abs(diff2d)))
     plt.colorbar(label='Difference (img1 - img2)')
     plt.title("Signed Image Difference (Color)")

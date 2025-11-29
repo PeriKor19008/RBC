@@ -1,10 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Dict
-
+from typing import Dict, Tuple, List, Optional
 from torch import Tensor
-
-from src.model.ae_heads import *
 from src.utils.fileName_to_params import file_name_to_params
 import re
 import os
@@ -23,7 +20,7 @@ def _infer_ref_index_from_path(p: Path) -> float:
 
     p = Path(p).resolve()
 
-    # 1) Try mapping file near the image
+
     names = ("ref_index_map.txt", "refindex_map.txt", "ri_map.txt")
     map_file: Optional[Path] = None
     for d in [p.parent] + list(p.parents):
@@ -163,13 +160,12 @@ def change_block(size, img:Tensor) -> Tensor:
     if size < 1:
         raise ValueError("size must be >= 1")
 
-    # img is [1, 50, 50] (from load_rbc_txt_image_and_labels)
-    # work on a copy to avoid in-place side effects
+
     out = img.clone()
 
-    _, H, W = out.shape  # expected 50x50
+    _, H, W = out.shape
     b = int(size)
-    b = min(b, H, W)  # clamp to image size
+    b = min(b, H, W)
 
     # choose top-left corner uniformly
     i = torch.randint(0, H - b + 1, (1,)).item()
@@ -231,7 +227,7 @@ def show_img(img: torch.Tensor):
         arr,
         cmap="gray",
         vmin=vmin,
-        vmax=vmax,           # keep fixed range to avoid autoscale shifts
+        vmax=vmax,
         interpolation="nearest"
     )
 
@@ -244,11 +240,11 @@ def show_img(img: torch.Tensor):
 
 def plot_error_prc(iterations,errors: List[float],max_errors: List[float], save_path: str | None = None):
     LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
-    avg_vals = [float(v) for v in errors]  # CHANGED: renamed for clarity
+    avg_vals = [float(v) for v in errors]
 
     x = np.arange(len(LABEL_KEYS))
     width_single = 0.6
-    width_grouped = 0.38  # NEW
+    width_grouped = 0.38
 
     fig = plt.figure(figsize=(7.5, 4.5))
     ax = plt.gca()

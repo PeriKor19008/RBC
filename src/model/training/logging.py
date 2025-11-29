@@ -1,5 +1,5 @@
 import os
-from src.model.plot import plot_and_save_loss_graph, plot_lr_graph
+from src.model.plot import plot_lr_graph
 
 
 def log_run_details(num_epochs, learning_rate, batch_size, layers,

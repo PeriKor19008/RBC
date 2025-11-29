@@ -1,10 +1,6 @@
 import math
-from pathlib import Path
 from typing import Sequence, Tuple, Dict, List
-import torch
 import torch.nn.functional as F
-import numpy as np
-import matplotlib.pyplot as plt
 from tests_helper import *
 
 LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
@@ -30,24 +26,24 @@ def _gaussian_blur_2d(img: torch.Tensor, sigma: float) -> torch.Tensor:
     c, h, w = img.shape
     assert c == 1, "expected single-channel image [1,H,W]"
 
-    k1d = _gaussian_kernel1d(sigma, img.dtype, img.device)        # [K]
-    ky = k1d.view(1, 1, -1, 1)                                     # [outC,inC,Kh,1]
-    kx = k1d.view(1, 1, 1, -1)                                     # [outC,inC,1,Kw]
+    k1d = _gaussian_kernel1d(sigma, img.dtype, img.device)
+    ky = k1d.view(1, 1, -1, 1)
+    kx = k1d.view(1, 1, 1, -1)
 
     # add batch dim
-    x = img.unsqueeze(0)                                           # [1,1,H,W]
+    x = img.unsqueeze(0)
 
     # reflect-pad then convolve Y
-    pad_y = (0, 0, k1d.numel() // 2, k1d.numel() // 2)             # (left,right,top,bottom)
+    pad_y = (0, 0, k1d.numel() // 2, k1d.numel() // 2)
     y = F.pad(x, pad_y, mode="reflect")
-    y = F.conv2d(y, ky, padding=0, groups=1)                       # [1,1,H,W]
+    y = F.conv2d(y, ky, padding=0, groups=1)
 
     # reflect-pad then convolve X
     pad_x = (k1d.numel() // 2, k1d.numel() // 2, 0, 0)
     y = F.pad(y, pad_x, mode="reflect")
-    y = F.conv2d(y, kx, padding=0, groups=1)                       # [1,1,H,W]
+    y = F.conv2d(y, kx, padding=0, groups=1)
 
-    return y.squeeze(0)                                            # [1,H,W]
+    return y.squeeze(0)
 
 def _unsharp(img: torch.Tensor, amount: float, sigma: float, clamp: bool = True) -> torch.Tensor:
 
@@ -83,34 +79,34 @@ def test_gaussian_blur_sweep(
     dev = next(model.parameters()).device
 
     results: Dict[float, List[float]] = {}
-    macro_series: List[Tuple[float, float]] = []  # (sigma, macro%)
+    macro_series: List[Tuple[float, float]] = []
 
     for sigma in sigmas:
-        # accumulators for this sigma
+
         sum_pct = torch.zeros(4, dtype=torch.float32)
         n = 0
 
         for f in files:
-            img, lbl_true = load_rbc_txt_image_and_labels(f)   # img: [1,50,50], lbl_true: [4]
-            img_blur = _gaussian_blur_2d(img, float(sigma))    # blur in the same space as training/test
+            img, lbl_true = load_rbc_txt_image_and_labels(f)
+            img_blur = _gaussian_blur_2d(img, float(sigma))
 
-            x = img_blur.unsqueeze(0).to(dev)                  # [1,1,50,50]
+            x = img_blur.unsqueeze(0).to(dev)
             with torch.no_grad():
-                lbl_pred = model(x).squeeze(0).detach().cpu()  # [4]
+                lbl_pred = model(x).squeeze(0).detach().cpu()
 
             lbl_true_cpu = lbl_true.cpu()
             abs_err = (lbl_pred - lbl_true_cpu).abs()
-            pct_err = abs_err / (lbl_true_cpu.abs() + pct_eps) * 100.0  # [4]
+            pct_err = abs_err / (lbl_true_cpu.abs() + pct_eps) * 100.0
 
             sum_pct += pct_err.to(sum_pct.dtype)
             n += 1
 
-        avg_pct = (sum_pct / max(1, n)).tolist()               # [4]
+        avg_pct = (sum_pct / max(1, n)).tolist()
         results[float(sigma)] = avg_pct
         macro = float(np.mean(avg_pct))
         macro_series.append((float(sigma), macro))
 
-        # optional per-sigma print
+
         print(f"[sigma={sigma:.2f}] avg % errors -> "
               + ", ".join(f"{k}={v:.2f}%" for k, v in zip(LABEL_KEYS, avg_pct))
               + f"  | macro={macro:.2f}%")
@@ -189,7 +185,7 @@ def test_unsharp_sweep(
               + ", ".join(f"{k}={v:.2f}%" for k, v in zip(LABEL_KEYS, avg_pct))
               + f"  | macro={macro:.2f}%")
 
-    # ---- plot per-label curves over 'amount' ----
+
     amts = np.array(list(results.keys()), dtype=float)
     per_label = np.array([results[a] for a in results.keys()], dtype=float)  # [A,4]
 

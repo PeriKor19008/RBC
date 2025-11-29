@@ -53,7 +53,7 @@ class FlexibleCNN(nn.Module):
             if layer_type != "conv":
                 raise ValueError(f"Unsupported conv layer type: {layer_type}")
 
-            # 1) always add the conv + relu
+
             self.conv_layers.add_module(
                 f"conv{idx}",
                 nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)

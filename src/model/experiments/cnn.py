@@ -43,17 +43,16 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
         if not p.requires_grad:
             continue
         if p.ndim == 1 or name.endswith("bias"):
-            no_decay.append(p)  # biases & LayerNorm/BatchNorm weights
+            no_decay.append(p)
         else:
-            decay.append(p)  # weights to decay
+            decay.append(p)
 
     optimizer = optim.AdamW(
         [{"params": decay, "weight_decay": 1e-4},
          {"params": no_decay, "weight_decay": 0.0}],
         lr=learning_rate,
     )
-    num_epochs = epochs
-    # make a string label for plots/keys (do NOT use the list itself)
+
     label = f"conv{len(conv_config)}_fc{len(fc_config)}"
 
     # --- train ---

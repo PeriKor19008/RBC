@@ -1,7 +1,5 @@
-import torch
 from Data.DB_setup.db_config import DB_CONFIG
 from torch.utils.data import DataLoader, random_split
-from src.model.RBCDataset import RBCDatasetDB
 from src.model.model import FCAutoencoder
 from src.model.training.loops import train_autoencoder
 from datetime import datetime
@@ -30,8 +28,6 @@ def run_autoencoder(batchSize, epochs, lr_rate, h_layers=None,
     train_dataset = train_ds
     val_dataset = val_ds
 
-    # when noise=True → train a *denoising* autoencoder:
-    # input = noisy image, target = clean image
 
     train_tf = nn.Sequential(
         AddGaussianNoise(std=0.4, p=0.7),
@@ -63,7 +59,7 @@ def run_autoencoder(batchSize, epochs, lr_rate, h_layers=None,
             "final_div_factor": 1e4,
             "cycle_momentum": False
         },
-           # <--- tell trainer we are in denoising mode
+
     )
 
     return train_losses, val_losses, run_dir
@@ -71,8 +67,7 @@ def run_autoencoder(batchSize, epochs, lr_rate, h_layers=None,
 def multi_train_autoencoder():
     run_dirs = []
 
-    # === explicit AE runs (no loops) ===
-    # (layers arg is unused by AE — pass anything, e.g., 0)
+
     _, _, rd = run_autoencoder(32, 40, 0.0001,[1024, 512, 128], 64)
     run_dirs.append(rd)
     _, _, rd = run_autoencoder(32, 40, 0.0001,[2000,1024, 512, 128], 64)
@@ -100,7 +95,7 @@ def multi_train_autoencoder():
         title="Autoencoder manual runs (train loss)"
     )
 
-    # Optional: manifest for traceability
+
     with open(os.path.join(out_dir, "manifest.txt"), "w") as f:
         f.write("AE runs compared:\n")
         for rd in run_dirs:

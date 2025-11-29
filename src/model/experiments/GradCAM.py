@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from typing import Optional, Tuple
+from typing import Optional
 import matplotlib.pyplot as plt
 
 
@@ -63,9 +63,9 @@ class GradCAM:
 
         assert x.ndim == 4 and x.size(0) == 1, "Δώσε batch με 1 εικόνα: [1,C,H,W]"
 
-        # -- Forward --
+
         self.model_zero_grad()
-        y = self.model(x)  # [1, 4]
+        y = self.model(x)
 
 
         self.model.zero_grad(set_to_none=True)
@@ -104,10 +104,10 @@ def overlay_heatmap(img: np.ndarray, cam: np.ndarray, alpha: float = 0.5) -> np.
         img_rgb = np.stack([img, img, img], axis=-1)
     else:
         img_rgb = img.copy()
-        if img_rgb.max() > 1.0:  # ασφάλεια
+        if img_rgb.max() > 1.0:
             img_rgb = img_rgb / 255.0
 
-    heat = cm.jet(cam)[..., :3]  # jet colormap σε RGB
+    heat = cm.jet(cam)[..., :3]
     out = (1 - alpha) * img_rgb + alpha * heat
     out = np.clip(out, 0, 1)
     return out

@@ -18,14 +18,7 @@ from src.model.experiments.tests_helper import load_rbc_txt_image_and_labels
 from src.utils.paths import rel_to_root
 
 
-def load_ae_model(ckpt_path: str,latent_dim, hidden_dims) -> nn.Module:
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    ckpt = rel_to_root(ckpt_path)
-    model= FCAutoencoder(latent_dim=latent_dim, hidden_dims=hidden_dims)
-    state_dict = torch.load(ckpt, map_location=device,weights_only=False)
-    model.load_state_dict(state_dict)
-    model = model.to(device)
-    return model
+
 
 def mse_np(x, y):
     return float(torch.mean((x - y) ** 2))
