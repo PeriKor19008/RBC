@@ -164,8 +164,8 @@ if __name__ == "__main__":
     #     sample_path="Data/extra_runs_good_img",per_label=False,avg=True,
     # )
 
-    #cor_run()
-    run_grad_Cam()
+    cor_run()
+    #run_grad_Cam()
     #frequency_test()
     #run_ae_test()
 

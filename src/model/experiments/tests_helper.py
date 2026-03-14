@@ -238,48 +238,180 @@ def show_img(img: torch.Tensor):
     plt.show()
     plt.close(fig)
 
-def plot_error_prc(iterations,errors: List[float],max_errors: List[float], save_path: str | None = None):
+# def plot_error_prc(iterations,errors: List[float],max_errors: List[float], save_path: str | None = None):
+#     LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
+#     avg_vals = [float(v) for v in errors]
+#
+#     x = np.arange(len(LABEL_KEYS))
+#     width_single = 0.6
+#     width_grouped = 0.38
+#
+#     fig = plt.figure(figsize=(7.5, 4.5))
+#     ax = plt.gca()
+#
+#     if max_errors is None:  # NEW: backwards-compatible single-series plot
+#         ax.set_ylim(0, max(avg_vals) * 1.15)
+#         bars = ax.bar(x, avg_vals, width_single, label="Avg |Error|")  # CHANGED: uses avg_vals
+#         title = f"Average Error Percentage across {iterations} samples"  # NEW
+#
+#         for b in bars:
+#             h = b.get_height()
+#             ax.annotate(f"{h:.3g}%", xy=(b.get_x() + b.get_width() / 2, h),
+#                         xytext=(0, 3), textcoords="offset points",
+#                         ha="center", va="bottom", fontsize=9)
+#     else:
+#         max_vals = [float(v) for v in max_errors]  # NEW
+#         ymax = max(max(avg_vals), max(max_vals)) * 1.15  # NEW
+#         ax.set_ylim(0, ymax)  # NEW
+#
+#         bars_avg = ax.bar(x - width_grouped / 2, avg_vals, width_grouped, label="Avg |Error|")  # NEW
+#         bars_max = ax.bar(x + width_grouped / 2, max_vals, width_grouped, label="Max |Error|")  # NEW
+#         title = f"Avg & Max Error Percentage across {iterations} samples"  # NEW
+#
+#         # NEW: annotate both series
+#         for b in list(bars_avg) + list(bars_max):
+#             h = b.get_height()
+#             ax.annotate(f"{h:.3g}%", xy=(b.get_x() + b.get_width() / 2, h),
+#                         xytext=(0, 3), textcoords="offset points",
+#                         ha="center", va="bottom", fontsize=9)
+#         ax.legend()  # NEW
+#
+#     ax.set_xticks(x)
+#     ax.set_xticklabels(LABEL_KEYS)
+#     ax.set_ylabel("Error Percentage")  # CHANGED: covers both avg & max
+#     ax.set_title(title)  # CHANGED
+#     ax.grid(axis="y", linestyle="--", alpha=0.4)
+#
+#     fig.tight_layout()
+#
+#     if save_path:
+#         os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+#         fig.savefig(save_path, dpi=150)
+#
+#     plt.show()
+#     plt.close(fig)
+
+
+# def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | None = None, thresh: float = 15.0,
+#                    block:bool = False,jitter:bool = False,noise:bool = True,ae : nn.Module = None):
+#     dir_path = Path(dir_path).resolve()
+#     if not dir_path.exists() or not dir_path.is_dir():
+#         raise FileNotFoundError(f"Directory not found: {dir_path}")
+#     model.eval()
+#     dev = next(model.parameters()).device
+#
+#     # accumulators (sum across samples)
+#     error = torch.zeros(4)
+#     error_prc = torch.zeros(4)
+#     max_prc_err = torch.zeros(4)
+#     it = 0
+#
+#     for f in dir_path.iterdir():
+#         if not f.is_file() or f.suffix.lower() != ".f06":
+#             continue
+#         img, lbl_true = load_rbc_txt_image_and_labels(f)
+#         if block:
+#             img = change_block(2,img)
+#         if jitter:
+#             img = jitter_block(5,img,5)
+#
+#         if noise:
+#             n = nn.Sequential(
+#                 AddGaussianNoise(std=0.8, p=0.5),
+#                 AddSpeckleNoise(std=0.8, p=0.5),
+#             )
+#             img = n(img)
+#         x = img.unsqueeze(0).to(dev)
+#         #show_img(img)
+#         if  ae:
+#             x = ae(x)
+#             #show_img(x.squeeze(0))
+#
+#         with torch.no_grad():
+#             lbl_pred = model(x).squeeze(0).detach().cpu()
+#         abs_err = abs(lbl_true - lbl_pred)
+#         eps = 1e-8
+#         prc_err = ((lbl_pred - lbl_true.cpu()).abs() / (lbl_true.cpu().abs() + eps) * 100.0).tolist()
+#         if any(v > thresh for v in prc_err):
+#
+#             print(f"{f.name}: " + ",\t".join(f"{LABEL_KEYS[i]}={prc_err[i]:.2f}%" for i in range(4)))
+#
+#             true_vals = [float(lbl_true[i].cpu()) for i in range(4)]
+#             print("\t" + "\t" + "\t".join(f"true_{LABEL_KEYS[i]}={true_vals[i]:.6g}" for i in range(4)))
+#         else:
+#             # element-wise accumulate
+#             error = [error[i] + abs_err[i] for i in range(len(abs_err))]
+#             error_prc = [error_prc[i] + prc_err[i] for i in range(len(prc_err))]
+#             max_prc_err = [max(max_prc_err[i], prc_err[i]) for i in range(4)]
+#             it += 1
+#     # averages per label
+#     avg_prc_err = [error_prc[i] / it for i in range(len(error_prc))]
+#
+#     plot_error_prc(it, avg_prc_err, max_prc_err, str(save_path_pct))
+#     print("######")
+#     avg_err = 0
+#     for i in range(len(avg_prc_err)):
+#         avg_err += avg_prc_err[i]
+#     avg_err /= len(avg_prc_err)
+#     print("avg error------" + str(avg_err))
+#     print(" avg per label error----" + str(avg_prc_err))
+
+def plot_error_prc(iterations, errors: List[float], max_errors: List[float], std_errors: List[float] = None,
+                   save_path: str | None = None):
     LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
     avg_vals = [float(v) for v in errors]
+    std_vals = [float(v) for v in std_errors] if std_errors else None
+
+    # --- NEW CODE: Create custom x-axis labels with Std Dev ---
+    if std_vals:
+        x_labels = [f"{key}\n(±{std:.2f}%)" for key, std in zip(LABEL_KEYS, std_vals)]
+    else:
+        x_labels = LABEL_KEYS
+    # ----------------------------------------------------------
 
     x = np.arange(len(LABEL_KEYS))
     width_single = 0.6
     width_grouped = 0.38
 
-    fig = plt.figure(figsize=(7.5, 4.5))
+    # Slightly increased the height from 4.5 to 5.0 to give space for the two-line x-labels
+    fig = plt.figure(figsize=(7.5, 5.0))
     ax = plt.gca()
 
-    if max_errors is None:  # NEW: backwards-compatible single-series plot
+    if max_errors is None:
         ax.set_ylim(0, max(avg_vals) * 1.15)
-        bars = ax.bar(x, avg_vals, width_single, label="Avg |Error|")  # CHANGED: uses avg_vals
-        title = f"Average Error Percentage across {iterations} samples"  # NEW
+        bars = ax.bar(x, avg_vals, width_single, label="Avg |Error|")
+        title = f"Average Error Percentage across {iterations} samples"
 
         for b in bars:
             h = b.get_height()
             ax.annotate(f"{h:.3g}%", xy=(b.get_x() + b.get_width() / 2, h),
                         xytext=(0, 3), textcoords="offset points",
                         ha="center", va="bottom", fontsize=9)
+        ax.legend()
     else:
-        max_vals = [float(v) for v in max_errors]  # NEW
-        ymax = max(max(avg_vals), max(max_vals)) * 1.15  # NEW
-        ax.set_ylim(0, ymax)  # NEW
+        max_vals = [float(v) for v in max_errors]
 
-        bars_avg = ax.bar(x - width_grouped / 2, avg_vals, width_grouped, label="Avg |Error|")  # NEW
-        bars_max = ax.bar(x + width_grouped / 2, max_vals, width_grouped, label="Max |Error|")  # NEW
-        title = f"Avg & Max Error Percentage across {iterations} samples"  # NEW
+        ymax = max(max(avg_vals), max(max_vals)) * 1.15
+        ax.set_ylim(0, ymax)
 
-        # NEW: annotate both series
+        bars_avg = ax.bar(x - width_grouped / 2, avg_vals, width_grouped, label="Avg |Error|")
+        bars_max = ax.bar(x + width_grouped / 2, max_vals, width_grouped, label="Max |Error|")
+
+        title = f"Avg & Max Error Percentage across {iterations} samples"
+
         for b in list(bars_avg) + list(bars_max):
             h = b.get_height()
             ax.annotate(f"{h:.3g}%", xy=(b.get_x() + b.get_width() / 2, h),
                         xytext=(0, 3), textcoords="offset points",
                         ha="center", va="bottom", fontsize=9)
-        ax.legend()  # NEW
+        ax.legend()
 
     ax.set_xticks(x)
-    ax.set_xticklabels(LABEL_KEYS)
-    ax.set_ylabel("Error Percentage")  # CHANGED: covers both avg & max
-    ax.set_title(title)  # CHANGED
+    # --- FIXED: Use the custom labels here ---
+    ax.set_xticklabels(x_labels)
+    # -----------------------------------------
+    ax.set_ylabel("Error Percentage")
+    ax.set_title(title)
     ax.grid(axis="y", linestyle="--", alpha=0.4)
 
     fig.tight_layout()
@@ -290,7 +422,6 @@ def plot_error_prc(iterations,errors: List[float],max_errors: List[float], save_
 
     plt.show()
     plt.close(fig)
-
 
 def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | None = None, thresh: float = 15.0,
                    block:bool = False,jitter:bool = False,noise:bool = True,ae : nn.Module = None):
@@ -305,11 +436,14 @@ def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | 
     error_prc = torch.zeros(4)
     max_prc_err = torch.zeros(4)
     it = 0
-
+    all_prc_errors = []
+    all_y_true = []
+    all_y_pred = []
     for f in dir_path.iterdir():
         if not f.is_file() or f.suffix.lower() != ".f06":
             continue
         img, lbl_true = load_rbc_txt_image_and_labels(f)
+
         if block:
             img = change_block(2,img)
         if jitter:
@@ -334,20 +468,59 @@ def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | 
         prc_err = ((lbl_pred - lbl_true.cpu()).abs() / (lbl_true.cpu().abs() + eps) * 100.0).tolist()
         if any(v > thresh for v in prc_err):
 
-            print(f"{f.name}: " + ",\t".join(f"{LABEL_KEYS[i]}={prc_err[i]:.2f}%" for i in range(4)))
-
             true_vals = [float(lbl_true[i].cpu()) for i in range(4)]
-            print("\t" + "\t" + "\t".join(f"true_{LABEL_KEYS[i]}={true_vals[i]:.6g}" for i in range(4)))
+            pred_vals = [float(lbl_pred[i].cpu()) for i in range(4)]
+
+            print(f"\n[!] Outlier Detected: {f.name}")
+            print(f"    {'Property':<12} | {'True Value':<12} | {'Predicted':<12} | {'Error %':<10}")
+            print("    " + "-" * 55)
+
+            for i in range(4):
+
+                marker = "<-- OVER THRESHOLD" if prc_err[i] > thresh else ""
+
+                print(
+                    f"    {LABEL_KEYS[i]:<12} | {true_vals[i]:<12.5g} | {pred_vals[i]:<12.5g} | {prc_err[i]:>6.2f}%  {marker}")
+            print("    " + "-" * 55 + "\n")
         else:
             # element-wise accumulate
             error = [error[i] + abs_err[i] for i in range(len(abs_err))]
             error_prc = [error_prc[i] + prc_err[i] for i in range(len(prc_err))]
             max_prc_err = [max(max_prc_err[i], prc_err[i]) for i in range(4)]
             it += 1
+
+            all_prc_errors.append(prc_err)
+            all_y_true.append(lbl_true.cpu().tolist())
+            all_y_pred.append(lbl_pred.cpu().tolist())
+
     # averages per label
     avg_prc_err = [error_prc[i] / it for i in range(len(error_prc))]
+    errors_tensor = torch.tensor(all_prc_errors, dtype=torch.float32)
+    std_prc_err = torch.std(errors_tensor, dim=0).tolist()
+    plot_error_prc(it, avg_prc_err, max_prc_err,std_prc_err, str(save_path_pct))
 
-    plot_error_prc(it, avg_prc_err, max_prc_err, str(save_path_pct))
+    y_true_np = np.array(all_y_true)
+    y_pred_np = np.array(all_y_pred)
+    y_true_ts = torch.tensor(all_y_true, dtype=torch.float32)
+    y_pred_ts = torch.tensor(all_y_pred, dtype=torch.float32)
+
+    # Define output directory
+    dir_out = os.path.dirname(str(save_path_pct))
+
+    # 1. R-Squared Scores
+    print_r2_scores(y_true_ts, y_pred_ts)
+
+    # 2. Boxplot
+    plot_boxplot_errors(all_prc_errors, save_path=os.path.join(dir_out, "boxplot_errors.png"))
+
+    # 3. Scatter Plot
+    plot_scatter_true_vs_pred(y_true_np, y_pred_np, save_path=os.path.join(dir_out, "scatter_true_pred.png"))
+
+    # 4. Bland-Altman
+    plot_bland_altman(y_true_np, y_pred_np, save_path=os.path.join(dir_out, "bland_altman.png"))
+    # -------------------------------------------------
+
+
     print("######")
     avg_err = 0
     for i in range(len(avg_prc_err)):
@@ -355,3 +528,111 @@ def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | 
     avg_err /= len(avg_prc_err)
     print("avg error------" + str(avg_err))
     print(" avg per label error----" + str(avg_prc_err))
+    print(" std per label error----" + str(std_prc_err))
+
+
+def plot_scatter_true_vs_pred(y_true: np.ndarray, y_pred: np.ndarray, save_path: str | None = None):
+    """ Scatter plot of True vs Predicted Values (2x2 grid) """
+    LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
+    fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+    fig.suptitle("True vs Predicted Values", fontsize=14)
+
+    for i, ax in enumerate(axs.flat):
+        true_vals = y_true[:, i]
+        pred_vals = y_pred[:, i]
+
+        ax.scatter(true_vals, pred_vals, alpha=0.6, edgecolors='k')
+
+        # Draw the ideal diagonal line (y = x)
+        min_val = min(true_vals.min(), pred_vals.min())
+        max_val = max(true_vals.max(), pred_vals.max())
+        ax.plot([min_val, max_val], [min_val, max_val], 'r--', lw=2, label="Ideal (y=x)")
+
+        ax.set_title(LABEL_KEYS[i])
+        ax.set_xlabel("True Value")
+        ax.set_ylabel("Predicted Value")
+        ax.legend()
+        ax.grid(True, linestyle="--", alpha=0.5)
+
+    fig.tight_layout()
+    if save_path:
+        os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+        fig.savefig(save_path, dpi=150)
+    plt.show()
+    plt.close(fig)
+
+
+def plot_boxplot_errors(all_prc_errors: list, save_path: str | None = None):
+    """ Boxplot for the distribution of Percentage Errors """
+    LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
+    data = np.array(all_prc_errors)  # Shape: (N_samples, 4)
+
+    fig = plt.figure(figsize=(8, 5))
+    ax = plt.gca()
+
+    # showfliers=True ensures outliers are displayed as points
+    ax.boxplot(data, labels=LABEL_KEYS, showfliers=True, patch_artist=True,
+               boxprops=dict(facecolor='lightblue', color='blue'),
+               medianprops=dict(color='red', lw=2))
+
+    ax.set_title("Percentage Error Distribution (Boxplot)")
+    ax.set_ylabel("Error Percentage (%)")
+    ax.grid(axis='y', linestyle='--', alpha=0.5)
+
+    fig.tight_layout()
+    if save_path:
+        os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+        fig.savefig(save_path, dpi=150)
+    plt.show()
+    plt.close(fig)
+
+
+def plot_bland_altman(y_true: np.ndarray, y_pred: np.ndarray, save_path: str | None = None):
+    """ Bland-Altman Plot (Mean vs Difference) (2x2 grid) """
+    LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
+    fig, axs = plt.subplots(2, 2, figsize=(10, 8))
+    fig.suptitle("Bland-Altman Plots", fontsize=14)
+
+    for i, ax in enumerate(axs.flat):
+        true_vals = y_true[:, i]
+        pred_vals = y_pred[:, i]
+
+        mean_vals = (true_vals + pred_vals) / 2.0
+        diff_vals = pred_vals - true_vals  # Error (Predicted - True)
+
+        md = np.mean(diff_vals)  # Mean Difference
+        sd = np.std(diff_vals, axis=0)  # Standard Deviation of Difference
+
+        ax.scatter(mean_vals, diff_vals, alpha=0.6, edgecolors='k')
+        ax.axhline(md, color='red', linestyle='-', lw=2, label=f'Mean Diff: {md:.2g}')
+        ax.axhline(md + 1.96 * sd, color='gray', linestyle='--', lw=2, label='+1.96 SD')
+        ax.axhline(md - 1.96 * sd, color='gray', linestyle='--', lw=2, label='-1.96 SD')
+
+        ax.set_title(LABEL_KEYS[i])
+        ax.set_xlabel("Mean of True and Pred")
+        ax.set_ylabel("Difference (Pred - True)")
+        ax.legend()
+        ax.grid(True, linestyle="--", alpha=0.5)
+
+    fig.tight_layout()
+    if save_path:
+        os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+        fig.savefig(save_path, dpi=150)
+    plt.show()
+    plt.close(fig)
+
+
+def print_r2_scores(y_true: torch.Tensor, y_pred: torch.Tensor):
+    """ Calculate and print the R-squared (R2) Score """
+    LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
+
+    # R2 = 1 - ( SS_res / SS_tot )
+    ss_res = torch.sum((y_true - y_pred) ** 2, dim=0)
+    ss_tot = torch.sum((y_true - torch.mean(y_true, dim=0)) ** 2, dim=0)
+
+    r2_scores = 1 - (ss_res / (ss_tot + 1e-8))  # 1e-8 prevents division by zero
+
+    print("\n--- R-squared (R²) Scores ---")
+    for i in range(4):
+        print(f"{LABEL_KEYS[i]}: {r2_scores[i].item():.4f}  (or {r2_scores[i].item() * 100:.2f}%)")
+    print("-----------------------------\n")
