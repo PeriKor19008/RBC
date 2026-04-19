@@ -21,12 +21,7 @@ def build_scheduler(
     base_lr: Optional[float] = None,
     **kwargs: Any
 ) -> Tuple[Optional[object], str]:
-    """
-    Returns (scheduler, mode) where mode in {"batch","epoch","plateau","none"}.
-    - "batch": call scheduler.step() every batch
-    - "epoch": call scheduler.step() every epoch
-    - "plateau": call scheduler.step(val_loss) every epoch
-    """
+
     if not name:
         return None, "none"
     name = name.lower()
@@ -92,7 +87,6 @@ def build_scheduler(
         sched = ExponentialLR(optimizer, gamma=kwargs.get("gamma", 0.95))
         return sched, "epoch"
 
-    # default: no scheduler
     return None, "none"
 
 

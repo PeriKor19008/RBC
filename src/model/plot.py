@@ -28,9 +28,7 @@ def plot_loss_graphs(train_losses, val_losses, run_number, num_epochs, learning_
 
 def plot_lr_graph(epoch_lrs, run_number, num_epochs, learning_rate,
                   batch_size, layers, out_dir, lr_tag=None):
-    """
-    Per-run: Learning Rate vs Epoch. Saves into the same figs/ dir as the loss graph.
-    """
+
     os.makedirs(out_dir, exist_ok=True)
     epochs = range(1, len(epoch_lrs) + 1)
 

@@ -47,7 +47,7 @@ class FlexibleCNN(nn.Module):
         in_channels = input_shape[0]
         h, w = input_shape[1], input_shape[2]
 
-        # === Build convolutional layers ===
+
 
         for idx, (layer_type, out_channels) in enumerate(conv_config):
             if layer_type != "conv":
@@ -60,7 +60,7 @@ class FlexibleCNN(nn.Module):
             )
             self.conv_layers.add_module(f"relu{idx}", nn.ReLU(inplace=True))
 
-            # 2) add pooling only for blocks 1..4 (i.e., after the first conv, up to the 5th conv)
+
             if 1 <= idx <= 4 and min(h, w) >= 2:
                 self.conv_layers.add_module(f"pool{idx}", nn.MaxPool2d(2))
                 h //= 2
@@ -68,11 +68,11 @@ class FlexibleCNN(nn.Module):
 
             in_channels = out_channels
 
-        # === Flatten layer before FC ===
+        #Flatten layer before FC
 
         flat_size = in_channels * h * w
 
-        # === Build fully connected layers ===
+        # Build fully connected layers
         fc_layers = []
         fc_in = flat_size
 

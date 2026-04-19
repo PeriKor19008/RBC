@@ -23,7 +23,7 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
         )
         train_dataset = WithTransform(train_ds,transform=train_tf)
 
-    # -----create dataloader----
+    # create dataloader
     batch_size = batchSize
     dataloaders = {
         'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True),
@@ -34,7 +34,7 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
     if fc_config is None:
         fc_config = [128]
 
-    # --- build model, loss, opt ---
+    # build model
     model = FlexibleCNN(conv_config, fc_config)
     criterion = nn.SmoothL1Loss(beta=1.0)
     learning_rate = lr_rate
@@ -55,7 +55,7 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
 
     label = f"conv{len(conv_config)}_fc{len(fc_config)}"
 
-    # --- train ---
+    # train
     train_losses, val_losses, run_dir = train_model_val_loss(
         model=model,
         dataloaders=dataloaders,
@@ -69,9 +69,9 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
         fc_config=fc_config,
         scheduler_name="onecycle",
         scheduler_params={
-            "max_lr": learning_rate * 5.0,  # or x10
+            "max_lr": learning_rate * 5.0,
             "pct_start": 0.3,
-            "div_factor": (learning_rate * 5.0) / learning_rate,  # == 5.0
+            "div_factor": (learning_rate * 5.0) / learning_rate,
             "final_div_factor": 1e4,
             "cycle_momentum": False
         },
@@ -86,7 +86,7 @@ def train_CNN(batchSize, epochs,lr_rate, conv_config, fc_config=None,noise:bool 
 def multi_train_CNN():
     run_dirs = []
 
-    # === explicit CNN runs (no loops) ===
+
     _, _, rd = train_CNN(32, 1,0.001, [("conv", 16), ("conv", 32), ("conv", 64)], [128])
     run_dirs.append(rd)
 

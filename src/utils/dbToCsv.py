@@ -1,12 +1,7 @@
 
 import csv, argparse, mysql.connector, os.path as osp
 
-"""
-Exports the columns we need from ImageData:
-  filename, filepath, diameter, thickness, ratio, ref_index
-Also computes a relative path from --results_root -> 'relative_path'
-so paths work cleanly in Colab under /content/project/Data/results
-"""
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--host", default="localhost")
@@ -24,7 +19,7 @@ conn = mysql.connector.connect(
 )
 cur = conn.cursor(dictionary=True)
 
-# Adjust table/column names only if your schema differs.
+
 cur.execute("""
     SELECT filename, filepath, diameter, thickness, ratio, ref_index
     FROM ImageData

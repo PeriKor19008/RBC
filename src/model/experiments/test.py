@@ -13,7 +13,7 @@ def cor_run():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     ckpt_path = rel_to_root(
-        "outputs/models/FlexibleCNN/noise_BEST_old6_20251105-112939_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004819.pt")
+        "outputs/models/FlexibleCNN/BEST_old6_20251104-070605_FlexibleCNN_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/FlexibleCNN_e25_lr0.001_bs32_val0.004462.pt")
     ae_path = rel_to_root(
         "outputs/models/FCAutoencoder/cor_noise_20251123-193317_FCAutoencoder_e25_lr0.001_bs32_wd0.0_seed42_dsmanual/autoencoder_final.pt")
     data_dir_good = rel_to_root("Data/res_to_test")
@@ -21,7 +21,7 @@ def cor_run():
     model = torch.load(ckpt_path, map_location="cpu", weights_only=False).to(device).eval()
     ae_model =    torch.load(ae_path, map_location="cpu", weights_only=False).to(device).eval()
 
-    test_avg_error(model,data_dir_good,str(out_pct),99,block=False,jitter=False,noise=True,)
+    test_avg_error(model,data_dir_good,str(out_pct),99,block=False,jitter=False,noise=False,)
 
 def run_occlusion_demo(ckpt_path: str, sample_path: str,per_label: bool,avg:bool):
     # 1) load model

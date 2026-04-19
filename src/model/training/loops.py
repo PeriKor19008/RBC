@@ -66,14 +66,14 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
             optimizer.zero_grad()
             out = model(x)
 
-            # normalized loss (keep optimization invariant to label scales)
+
             y_norm = (y - y_mean) / y_std
             out_norm = (out - y_mean) / y_std
             loss = criterion(out_norm, y_norm)
             loss.backward()
             optimizer.step()
 
-            # per-step schedulers (OneCycle, Cosine w/ per-step, etc.)
+
             step_scheduler(scheduler, sched_mode)
 
             running += loss.item()
@@ -81,7 +81,7 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
         epoch_loss = running / len(dataloaders['train'])
         epoch_losses.append(epoch_loss)
 
-        # val (normalized loss)
+
         model.eval()
         v = 0.0
         with torch.no_grad():
@@ -96,7 +96,7 @@ def train_model_val_loss(model, dataloaders, criterion, optimizer,
         v /= max(1, len(dataloaders.get('val', [])))
         val_losses.append(v)
 
-        # per-epoch schedulers (Cosine, Step, Plateau)
+
         if sched_mode in {"epoch", "plateau"}:
             step_scheduler(scheduler, sched_mode, val_loss=v)
 
@@ -189,7 +189,7 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
         running = 0.0
         for batch in dataloaders['train']:
 
-            # batch = (x_noisy, x_clean)
+
             x_noisy, x_clean = batch
             x_noisy = x_noisy.to(device)
             x_clean = x_clean.to(device)
@@ -208,7 +208,7 @@ def train_autoencoder(model, dataloaders, criterion, optimizer,
         epoch_train_loss = running / len(dataloaders['train'])
         train_losses.append(epoch_train_loss)
 
-        # ---- val ----
+
         model.eval()
         v = 0.0
         with torch.no_grad():
@@ -271,151 +271,6 @@ def _compute_label_stats(train_loader, device):
 
 
 
-def _epoch_once_select_by_val_loss(
-    *,
-    model,
-    dataloaders,
-    device,
-    optimizer,
-    criterion,
-    scheduler,
-    sched_mode,
-    y_mean,
-    y_std,
-    best_val,
-    best_wts,
-    epoch_losses,
-    val_losses,
-    epoch_lr
-):
-    # train
-    model.train()
-    running = 0.0
-    for x, y in dataloaders['train']:
-        x, y = x.to(device), y.to(device)
-        optimizer.zero_grad()
-        out = model(x)
-
-        # normalized loss (keep optimization invariant to label scales)
-        y_norm = (y - y_mean) / y_std
-        out_norm = (out - y_mean) / y_std
-        loss = criterion(out_norm, y_norm)
-        loss.backward()
-        optimizer.step()
-
-        # per-step schedulers (OneCycle, Cosine w/ per-step, etc.)
-        step_scheduler(scheduler, sched_mode)
-
-        running += loss.item()
-
-    epoch_loss = running / len(dataloaders['train'])
-    epoch_losses.append(epoch_loss)
-
-    # val (normalized loss)
-    model.eval()
-    v = 0.0
-    with torch.no_grad():
-        for x, y in dataloaders.get('val', []):
-            x, y = x.to(device), y.to(device)
-            out = model(x)
-            y_norm = (y - y_mean) / y_std
-            out_norm = (out - y_mean) / y_std
-            v += criterion(out_norm, y_norm).item()
-    v /= max(1, len(dataloaders.get('val', [])))
-    val_losses.append(v)
-
-    # per-epoch schedulers (Cosine, Step, Plateau)
-    if sched_mode in {"epoch", "plateau"}:
-        step_scheduler(scheduler, sched_mode, val_loss=v)
-
-    current_lr_val = optimizer.param_groups[0]["lr"]
-    epoch_lr.append(current_lr_val)
-
-    # selection: lowest val loss
-    if v < best_val:
-        best_val = v
-        best_wts = copy.deepcopy(model.state_dict())
-
-    return best_val, best_wts, epoch_loss,val_losses, v, current_lr_val
 
 
-def _epoch_once_select_by_avg_pct(
-    *,
-    model,
-    dataloaders,
-    device,
-    optimizer,
-    criterion,
-    scheduler,
-    sched_mode,
-    y_mean,
-    y_std,
-    best_metric,          # best macro avg % so far (lower is better)
-    best_wts,
-    epoch_losses,
-    val_losses,
-    epoch_lr,
-    pct_eps=1e-8
-):
 
-    # train
-    model.train()
-    running = 0.0
-    for x, y in dataloaders['train']:
-        x, y = x.to(device), y.to(device)
-        optimizer.zero_grad()
-        out = model(x)
-
-        # normalized loss (optimization)
-        y_norm = (y - y_mean) / y_std
-        out_norm = (out - y_mean) / y_std
-        loss = criterion(out_norm, y_norm)
-        loss.backward()
-        optimizer.step()
-
-        step_scheduler(scheduler, sched_mode)
-        running += loss.item()
-
-    epoch_loss = running / len(dataloaders['train'])
-    epoch_losses.append(epoch_loss)
-
-    # val (compute both: normalized loss for logging, and % error for selection)
-    model.eval()
-    v = 0.0
-    n = 0
-    sum_pct_per_label = torch.zeros((y_mean.numel(),), device=device)  # 4-D
-    with torch.no_grad():
-        for x, y in dataloaders.get('val', []):
-            x, y = x.to(device), y.to(device)
-            out = model(x)
-
-            # normalized loss for logging
-            y_norm = (y - y_mean) / y_std
-            out_norm = (out - y_mean) / y_std
-            v += criterion(out_norm, y_norm).item()
-
-            # percentage error in original units
-            # shape: [B, 4] -> abs error / (|target| + eps) * 100
-            pct = (out - y).abs() / (y.abs() + pct_eps) * 100.0
-            sum_pct_per_label += pct.sum(dim=0)
-            n += y.size(0)
-
-    v /= max(1, len(dataloaders.get('val', [])))
-    val_losses.append(v)
-
-    if sched_mode in {"epoch", "plateau"}:
-        step_scheduler(scheduler, sched_mode, val_loss=v)
-
-    current_lr_val = optimizer.param_groups[0]["lr"]
-    epoch_lr.append(current_lr_val)
-
-    # average % error per label and macro average
-    mae_pct_per_label = sum_pct_per_label / max(1, n)           # [4]
-    macro_pct = mae_pct_per_label.mean().item()                 # scalar
-
-    # selection: lowest macro % error
-    if macro_pct < best_metric:
-        best_metric = macro_pct
-        best_wts = copy.deepcopy(model.state_dict())
-
-    return best_metric, mae_pct_per_label.detach().cpu(), best_wts, epoch_loss,val_losses, v, macro_pct, current_lr_val

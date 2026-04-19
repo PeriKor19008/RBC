@@ -53,7 +53,7 @@ def plot_image_as_line(image_data, use_log=False):
     plt.figure()
     plt.show()
 
-# === Example usage ===
+
 if __name__ == '__main__':
     db = ImageDB()
     image = db.search_image_by_dtr(5000,2750,600)

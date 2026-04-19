@@ -3,8 +3,8 @@ from src.model.plot import plot_lr_graph
 
 
 def log_run_details(num_epochs, learning_rate, batch_size, layers,
-                    final_loss, device, epoch_losses,  # train losses
-                    val_losses=None,                    # <-- NEW (optional)
+                    final_loss, device, epoch_losses,
+                    val_losses=None,
                     run_log_path='mock_run_observations.txt',
                     figs_dir='graphs_SimpleNN',
                     scheduler_name: str | None = None,
@@ -35,9 +35,7 @@ def log_run_details(num_epochs, learning_rate, batch_size, layers,
         f.write(f"Finished Training and saved the model.\n")
         f.write(f"---------------------------------------------------------\n")
     lr_tag =scheduler_name
-    # keep your old plot, saved into this run’s figs/
-    #plot_and_save_loss_graph(epoch_losses, run_number, num_epochs, learning_rate,
-                             #batch_size, layers, out_dir=figs_dir,lr_tag=lr_tag)
+
 
     if epoch_lrs:
         plot_lr_graph(epoch_lrs, run_number, num_epochs, learning_rate,

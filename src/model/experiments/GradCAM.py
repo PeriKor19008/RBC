@@ -21,7 +21,7 @@ class GradCAM:
         self.model = model.eval()
         self.model_zero_grad = lambda: self.model.zero_grad(set_to_none=True)
 
-        #find last conv layer
+
         if target_layer is None:
 
             if hasattr(model, "conv_layers"):

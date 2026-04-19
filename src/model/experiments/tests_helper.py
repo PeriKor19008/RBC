@@ -12,7 +12,7 @@ LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
 
 def _strip_leading_id_prefix(filename: str) -> str:
 
-    name = Path(filename).name  # ensure just the name + extension
+    name = Path(filename).name
     return re.sub(r"^\d+_", "", name)
 
 
@@ -167,11 +167,11 @@ def change_block(size, img:Tensor) -> Tensor:
     b = int(size)
     b = min(b, H, W)
 
-    # choose top-left corner uniformly
+    # choose top-left corner
     i = torch.randint(0, H - b + 1, (1,)).item()
     j = torch.randint(0, W - b + 1, (1,)).item()
 
-    # fill with random values sampled uniformly between image min/max
+    # fill with random values
     low = float(out.min())
     high = float(out.max())
     patch = torch.empty((1, b, b), dtype=out.dtype, device=out.device).uniform_(low, high)
@@ -194,7 +194,7 @@ def jitter_block(size: int, img: Tensor, strength: float = 0.1) -> Tensor:
     i = torch.randint(0, H - b + 1, (1,)).item()
     j = torch.randint(0, W - b + 1, (1,)).item()
 
-    # current block and its local stats
+
     block = out[:, i:i+b, j:j+b]
     local_std = float(block.std())
     global_std = float(out.std())
@@ -202,8 +202,7 @@ def jitter_block(size: int, img: Tensor, strength: float = 0.1) -> Tensor:
 
     if sigma > 0.0:
         noise = torch.randn_like(block) * sigma
-        block = block + noise  # small random change
-    # else sigma==0 -> block is constant; leave it as-is
+        block = block + noise
 
     print(sigma)
     low = float(out.min())
@@ -238,123 +237,7 @@ def show_img(img: torch.Tensor):
     plt.show()
     plt.close(fig)
 
-# def plot_error_prc(iterations,errors: List[float],max_errors: List[float], save_path: str | None = None):
-#     LABEL_KEYS = ["diameter", "thickness", "ratio", "ref_index"]
-#     avg_vals = [float(v) for v in errors]
-#
-#     x = np.arange(len(LABEL_KEYS))
-#     width_single = 0.6
-#     width_grouped = 0.38
-#
-#     fig = plt.figure(figsize=(7.5, 4.5))
-#     ax = plt.gca()
-#
-#     if max_errors is None:  # NEW: backwards-compatible single-series plot
-#         ax.set_ylim(0, max(avg_vals) * 1.15)
-#         bars = ax.bar(x, avg_vals, width_single, label="Avg |Error|")  # CHANGED: uses avg_vals
-#         title = f"Average Error Percentage across {iterations} samples"  # NEW
-#
-#         for b in bars:
-#             h = b.get_height()
-#             ax.annotate(f"{h:.3g}%", xy=(b.get_x() + b.get_width() / 2, h),
-#                         xytext=(0, 3), textcoords="offset points",
-#                         ha="center", va="bottom", fontsize=9)
-#     else:
-#         max_vals = [float(v) for v in max_errors]  # NEW
-#         ymax = max(max(avg_vals), max(max_vals)) * 1.15  # NEW
-#         ax.set_ylim(0, ymax)  # NEW
-#
-#         bars_avg = ax.bar(x - width_grouped / 2, avg_vals, width_grouped, label="Avg |Error|")  # NEW
-#         bars_max = ax.bar(x + width_grouped / 2, max_vals, width_grouped, label="Max |Error|")  # NEW
-#         title = f"Avg & Max Error Percentage across {iterations} samples"  # NEW
-#
-#         # NEW: annotate both series
-#         for b in list(bars_avg) + list(bars_max):
-#             h = b.get_height()
-#             ax.annotate(f"{h:.3g}%", xy=(b.get_x() + b.get_width() / 2, h),
-#                         xytext=(0, 3), textcoords="offset points",
-#                         ha="center", va="bottom", fontsize=9)
-#         ax.legend()  # NEW
-#
-#     ax.set_xticks(x)
-#     ax.set_xticklabels(LABEL_KEYS)
-#     ax.set_ylabel("Error Percentage")  # CHANGED: covers both avg & max
-#     ax.set_title(title)  # CHANGED
-#     ax.grid(axis="y", linestyle="--", alpha=0.4)
-#
-#     fig.tight_layout()
-#
-#     if save_path:
-#         os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
-#         fig.savefig(save_path, dpi=150)
-#
-#     plt.show()
-#     plt.close(fig)
 
-
-# def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | None = None, thresh: float = 15.0,
-#                    block:bool = False,jitter:bool = False,noise:bool = True,ae : nn.Module = None):
-#     dir_path = Path(dir_path).resolve()
-#     if not dir_path.exists() or not dir_path.is_dir():
-#         raise FileNotFoundError(f"Directory not found: {dir_path}")
-#     model.eval()
-#     dev = next(model.parameters()).device
-#
-#     # accumulators (sum across samples)
-#     error = torch.zeros(4)
-#     error_prc = torch.zeros(4)
-#     max_prc_err = torch.zeros(4)
-#     it = 0
-#
-#     for f in dir_path.iterdir():
-#         if not f.is_file() or f.suffix.lower() != ".f06":
-#             continue
-#         img, lbl_true = load_rbc_txt_image_and_labels(f)
-#         if block:
-#             img = change_block(2,img)
-#         if jitter:
-#             img = jitter_block(5,img,5)
-#
-#         if noise:
-#             n = nn.Sequential(
-#                 AddGaussianNoise(std=0.8, p=0.5),
-#                 AddSpeckleNoise(std=0.8, p=0.5),
-#             )
-#             img = n(img)
-#         x = img.unsqueeze(0).to(dev)
-#         #show_img(img)
-#         if  ae:
-#             x = ae(x)
-#             #show_img(x.squeeze(0))
-#
-#         with torch.no_grad():
-#             lbl_pred = model(x).squeeze(0).detach().cpu()
-#         abs_err = abs(lbl_true - lbl_pred)
-#         eps = 1e-8
-#         prc_err = ((lbl_pred - lbl_true.cpu()).abs() / (lbl_true.cpu().abs() + eps) * 100.0).tolist()
-#         if any(v > thresh for v in prc_err):
-#
-#             print(f"{f.name}: " + ",\t".join(f"{LABEL_KEYS[i]}={prc_err[i]:.2f}%" for i in range(4)))
-#
-#             true_vals = [float(lbl_true[i].cpu()) for i in range(4)]
-#             print("\t" + "\t" + "\t".join(f"true_{LABEL_KEYS[i]}={true_vals[i]:.6g}" for i in range(4)))
-#         else:
-#             # element-wise accumulate
-#             error = [error[i] + abs_err[i] for i in range(len(abs_err))]
-#             error_prc = [error_prc[i] + prc_err[i] for i in range(len(prc_err))]
-#             max_prc_err = [max(max_prc_err[i], prc_err[i]) for i in range(4)]
-#             it += 1
-#     # averages per label
-#     avg_prc_err = [error_prc[i] / it for i in range(len(error_prc))]
-#
-#     plot_error_prc(it, avg_prc_err, max_prc_err, str(save_path_pct))
-#     print("######")
-#     avg_err = 0
-#     for i in range(len(avg_prc_err)):
-#         avg_err += avg_prc_err[i]
-#     avg_err /= len(avg_prc_err)
-#     print("avg error------" + str(avg_err))
-#     print(" avg per label error----" + str(avg_prc_err))
 
 def plot_error_prc(iterations, errors: List[float], max_errors: List[float], std_errors: List[float] = None,
                    save_path: str | None = None):
@@ -362,18 +245,18 @@ def plot_error_prc(iterations, errors: List[float], max_errors: List[float], std
     avg_vals = [float(v) for v in errors]
     std_vals = [float(v) for v in std_errors] if std_errors else None
 
-    # --- NEW CODE: Create custom x-axis labels with Std Dev ---
+
     if std_vals:
         x_labels = [f"{key}\n(±{std:.2f}%)" for key, std in zip(LABEL_KEYS, std_vals)]
     else:
         x_labels = LABEL_KEYS
-    # ----------------------------------------------------------
+
 
     x = np.arange(len(LABEL_KEYS))
     width_single = 0.6
     width_grouped = 0.38
 
-    # Slightly increased the height from 4.5 to 5.0 to give space for the two-line x-labels
+
     fig = plt.figure(figsize=(7.5, 5.0))
     ax = plt.gca()
 
@@ -407,9 +290,7 @@ def plot_error_prc(iterations, errors: List[float], max_errors: List[float], std
         ax.legend()
 
     ax.set_xticks(x)
-    # --- FIXED: Use the custom labels here ---
     ax.set_xticklabels(x_labels)
-    # -----------------------------------------
     ax.set_ylabel("Error Percentage")
     ax.set_title(title)
     ax.grid(axis="y", linestyle="--", alpha=0.4)
@@ -431,7 +312,7 @@ def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | 
     model.eval()
     dev = next(model.parameters()).device
 
-    # accumulators (sum across samples)
+
     error = torch.zeros(4)
     error_prc = torch.zeros(4)
     max_prc_err = torch.zeros(4)
@@ -518,7 +399,7 @@ def test_avg_error(model: nn.Module, dir_path: str | Path, save_path_pct: str | 
 
     # 4. Bland-Altman
     plot_bland_altman(y_true_np, y_pred_np, save_path=os.path.join(dir_out, "bland_altman.png"))
-    # -------------------------------------------------
+
 
 
     print("######")

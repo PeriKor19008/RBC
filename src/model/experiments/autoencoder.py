@@ -55,7 +55,7 @@ def run_autoencoder(batchSize, epochs, lr_rate, h_layers=None,
         scheduler_params={
             "max_lr": lr_rate * 2.0,
             "pct_start": 0.4,
-            "div_factor": (lr_rate * 2.0) / lr_rate,  # == 2.0
+            "div_factor": (lr_rate * 2.0) / lr_rate,
             "final_div_factor": 1e4,
             "cycle_momentum": False
         },

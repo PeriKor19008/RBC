@@ -1,14 +1,4 @@
-"""
-Helpers for organizing training runs of the RBC project.
 
-Each run gets its own folder under `models/`, with:
-- config.json  (hyperparameters + dataset info)
-- metrics.csv  (loss values per epoch)
-- summary.json (best epoch + best metric)
-- model checkpoint(s)
-- figs/        (all plots for this run)
-"""
-import math
 import os,re, json, csv, hashlib, time
 from pathlib import Path
 from dataclasses import dataclass, asdict
@@ -32,15 +22,9 @@ class RunConfig:
         return asdict(self)
 
 
-def _hash(text: str, n: int = 8) -> str:
-    return hashlib.sha1(text.encode("utf-8")).hexdigest()[:n]
 
 
-def dataset_fingerprint(filepaths: List[str]) -> str:
-    """Create a short fingerprint for a dataset (stable ID)."""
-    fps = [os.path.normpath(p) for p in filepaths]
-    key = f"{len(fps)}|" + "|".join(sorted(fps)[:100])
-    return _hash(key, 10)
+
 
 
 def make_run_id(cfg: RunConfig, ds_fingerprint: str, when: Optional[float] = None) -> str:
@@ -57,10 +41,6 @@ def ensure_run_dir(base_dir: str, run_id: str) -> str:
     (d / "figs").mkdir(exist_ok=True)
     return str(d)
 
-
-# -----------------------
-# Logging helpers
-# -----------------------
 
 
 def write_config(run_dir: str, cfg: RunConfig, ds_fingerprint: str, extra: Optional[Dict[str, Any]] = None):

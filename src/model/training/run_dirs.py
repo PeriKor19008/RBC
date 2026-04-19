@@ -23,7 +23,7 @@ def start_run(model, num_epochs, learning_rate, batch_size, layers,
     figs_dir = os.path.join(run_dir, "figs")
     os.makedirs(figs_dir, exist_ok=True)
 
-    # NEW: store layers + any extra info (like conv_config/fc_config) into config.json
+
     extra = {"layers": layers}
     if extra_info:
         extra.update(extra_info)

@@ -30,15 +30,15 @@ def _gaussian_blur_2d(img: torch.Tensor, sigma: float) -> torch.Tensor:
     ky = k1d.view(1, 1, -1, 1)
     kx = k1d.view(1, 1, 1, -1)
 
-    # add batch dim
+
     x = img.unsqueeze(0)
 
-    # reflect-pad then convolve Y
+
     pad_y = (0, 0, k1d.numel() // 2, k1d.numel() // 2)
     y = F.pad(x, pad_y, mode="reflect")
     y = F.conv2d(y, ky, padding=0, groups=1)
 
-    # reflect-pad then convolve X
+
     pad_x = (k1d.numel() // 2, k1d.numel() // 2, 0, 0)
     y = F.pad(y, pad_x, mode="reflect")
     y = F.conv2d(y, kx, padding=0, groups=1)
